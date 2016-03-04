@@ -1,0 +1,14 @@
+## Interface: 60200
+## Title: |cffA02C2Fbd|rGrid
+## Version: 0
+## DefaultState: Enabled
+## LoadOnDemand: 0
+## X-oUF: oUFbdGrid
+## Dependencies: bdCore
+
+defaults.lua
+lib\oUF\oUF.xml
+lib\absorbs.lua
+lib\range.lua
+##lib\cluster.lua
+core.lua
