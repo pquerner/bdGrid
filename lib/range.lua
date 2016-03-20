@@ -163,10 +163,10 @@ local Enable = function(self)
 		frame:SetScale(1)
 
 		frame.arrow = frame:CreateTexture(nil, "OVERLAY")
-		frame.arrow:SetTexture"Interface\\Addons\\bUI\\libs\\arrow"
+		frame.arrow:SetTexture("Interface\\Addons\\bdGrid\\arrow.blp")
 		frame.arrow:SetPoint("TOPRIGHT", frame, "TOPRIGHT")
 		frame.arrow:SetSize(24, 24)
-
+		
 		self.freebarrow = frame
 		self.freebarrow:Hide()
 
