@@ -39,7 +39,7 @@ local defaults = {
 		options = {"LEFT","RIGHT"},
 		label = "Growth Direction",
 		tooltip = "The direction that new groups should be shown.",
-		callback = function() grid:callback() end
+		callback = function() grid:enable() end
 	}},
 }
 
@@ -237,10 +237,11 @@ function grid.layout(self, unit)
 		["DRUID"] = { ["Curse"] = true, ["Poison"] = true, ["Magic"] = true, }, --Nature's Cure
 		["MONK"] = { ["Poison"] = true, ["Disease"] = true, ["Magic"] = true, }, --Detox
 	}
-	local colors = {
-		Magic = {.16, .5, .81, 1},
-		Poison = {.12, .76, .36, 1},
-		Disease = {.76, .46, .12, 1},
+	local dispelColors = {
+		['Magic'] = {.16, .5, .81, 1},
+		['Poison'] = {.12, .76, .36, 1},
+		['Disease'] = {.76, .46, .12, 1},
+		['Curse'] = {.80, .33, .95, 1},
 	}
 
 	local _, class = UnitClass("player")
@@ -262,16 +263,9 @@ function grid.layout(self, unit)
 		--if (dispel and (dispelClass[class][dispel] or debuffwhitelist[dispelName])) then
 		if (dispel) then
 			self.Dispel:Show()
-				
-			if (dispel == "Magic") then
-				self.Dispel:SetBackdropBorderColor(.16, .5, .81, 1)
-			elseif (dispel == "Poison") then
-				self.Dispel:SetBackdropBorderColor(.12, .76, .36, 1)
-			elseif (dispel == "Disease") then
-				self.Dispel:SetBackdropBorderColor(.76, .46, .12, 1)
-			elseif (dispel == "Curse") then
-				self.Dispel:SetBackdropBorderColor(.80, .33, .95, 1)
-			else
+			self.Dispel:SetBackdropBorderColor(unpack(dispelColors[dispel]))
+
+			if (not dispelColors[dispel]) then
 				self.Dispel:Hide()
 			end
 			
@@ -337,10 +331,13 @@ function grid:enable()
 			"maxColumns", config['num_groups'],
 			"unitsPerColumn", 5,
 			"columnSpacing", 2,
-			"columnAnchorPoint", "LEFT",
+			"columnAnchorPoint", config.growth,
 			"point", "TOP"
 		)
 		party:SetPoint("TOPRIGHT", raidpartyholder, "TOPRIGHT", 0, 0)
+		if (config.growth == "RIGHT") then
+			party:SetPoint("TOPLEFT", raidpartyholder, "TOPLEFT", 0, 0)
+		end
 	end)
 	
 	grid:callback()
