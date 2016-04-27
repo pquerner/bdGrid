@@ -7,8 +7,4 @@
 ## Dependencies: bdCore
 
 defaults.lua
-lib\oUF\oUF.xml
-lib\absorbs.lua
-lib\range.lua
-##lib\cluster.lua
 core.lua
