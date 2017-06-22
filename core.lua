@@ -1,83 +1,142 @@
 local oUF = bdCore.oUF
 local grid = CreateFrame("frame", nil, UIParent)
 
-local defaults = {
-	[1] = {hidetooltips = {
-		type = "checkbox",
-		value = true,
-		label = "Hide Tooltips",
-		tooltip = "Hide tooltips when mousing over each unit",
-		callback = function() grid:enable() end
-	}},
-	[2] = {num_groups = {
-		type = "slider",
-		value = 4,
-		min = 1,
-		max = 8,
-		step = 1,
-		label = "Number of Groups",
-		tooltip = "How many groups should be shown at a time",
-		callback = function() grid:enable() end
-	}},
-	[3] = {width = {
-		type = "slider",
-		value = 60,
-		min = 20,
-		max = 100,
-		step = 2,
-		label = "Width",
-		tooltip = "The width of each player in the raid frames",
-		callback = function() grid:callback() end
-	}},
-	[4] = {height = {
-		type = "slider",
-		value = 50,
-		min = 20,
-		max = 100,
-		step = 2,
-		label = "Height",
-		tooltip = "The height of each player in the raid frames",
-		callback = function() grid:callback() end
-	}},
-	[5] = {growth = {
-		type = "dropdown",
-		value = "LEFT",
-		options = {"LEFT","RIGHT"},
-		label = "Growth Direction",
-		tooltip = "The direction that new groups should be shown.",
-		callback = function() grid:enable() end
-	}},
-	
-	[6] = {invert = {
-		type = "checkbox",
-		value = false,
-		label = "Invert Frame Colors",
-		tooltip = "Make the main color of the frames a dark grey, and the backgrounds the class color.",
-		callback = function() grid:enable() end
-	}},
-	
-	[7] = {roleicon = {
-		type = "checkbox",
-		value = false,
-		label = "Show role icon for tanks and healers",
-		tooltip = "Will only show icon for tanks/healers",
-		callback = function() grid:callback() end
-	}},
-}
+local defaults = {}
+
+defaults[#defaults+1] = {tab = {
+	type = "tab",
+	value = "Sizing & Display"
+}}
+defaults[#defaults+1] = {powerdisplay = {
+	type = "dropdown",
+	value = "None",
+	options = {"None","Healers","All"},
+	label = "Power Bar Display",
+	tooltip = "Show mana/energy/rage bars on frames.",
+	callback = function() bdCore:triggerEvent("bdGrid_update") end
+}}
+defaults[#defaults+1] = {num_groups = {
+	type = "slider",
+	value = 4,
+	min = 1,
+	max = 8,
+	step = 1,
+	label = "Number of Groups",
+	tooltip = "How many groups should be shown at a time",
+	callback = function() grid:refresh() end
+}}
+defaults[#defaults+1] = {width = {
+	type = "slider",
+	value = 60,
+	min = 20,
+	max = 100,
+	step = 2,
+	label = "Width",
+	tooltip = "The width of each player in the raid frames",
+	callback = function() grid:callback() end
+}}
+defaults[#defaults+1] = {height = {
+	type = "slider",
+	value = 50,
+	min = 20,
+	max = 100,
+	step = 2,
+	label = "Height",
+	tooltip = "The height of each player in the raid frames",
+	callback = function() grid:callback() end
+}}
+defaults[#defaults+1] = {hidetooltips = {
+	type = "checkbox",
+	value = true,
+	label = "Hide Tooltips",
+	tooltip = "Hide tooltips when mousing over each unit",
+	callback = function() grid:refresh() end
+}}
+defaults[#defaults+1] = {invert = {
+	type = "checkbox",
+	value = false,
+	label = "Invert Frame Colors",
+	tooltip = "Make the main color of the frames a dark grey, and the backgrounds the class color.",
+	callback = function() grid:refresh() end
+}}
+
+defaults[#defaults+1] = {roleicon = {
+	type = "checkbox",
+	value = false,
+	label = "Show role icon for tanks and healers",
+	tooltip = "Will only show icon for tanks/healers (only in groups)",
+	callback = function() grid:callback() end
+}}
+
+defaults[#defaults+1] = {showsolo = {
+	type = "checkbox",
+	value = true,
+	label = "Show raid frames when solo",
+	callback = function() grid:refresh() end
+}}
+
+defaults[#defaults+1] = {tab = {
+	type = "tab",
+	value = "Growth & Grouping"
+}}
+defaults[#defaults+1] = {vgrowth = {
+	type = "dropdown",
+	value = "DOWN",
+	options = {"UP","DOWN"},
+	label = "Vertical Growth Direction",
+	tooltip = "The direction that new members in groups should be shown.",
+	callback = function() grid:refresh() end
+}}
+
+defaults[#defaults+1] = {growth = {
+	type = "dropdown",
+	value = "LEFT",
+	options = {"LEFT","RIGHT"},
+	label = "Horizontal Growth Direction",
+	tooltip = "The direction that new groups should be shown.",
+	callback = function() grid:refresh() end
+}}
+
+defaults[#defaults+1] = {group_by = {
+	type = "dropdown",
+	value = "GROUP",
+	options = {"GROUP","ROLE","CLASS"},
+	label = "Group By",
+	tooltip = "Method by which the groups should be formed.",
+	callback = function() grid:refresh() end
+}}
+
+if (not bdCore.modules["Auras"]) then
+	bdCore:addModule("Auras", bdCore.auraconfig)
+end
+--[[
+if (not bdCore.modules["Aura Whitelist"]) then
+	bdCore:addModule("Aura Whitelist", bdCore.whitelistconfig)
+end
+if (not bdCore.modules["Aura Blacklist"]) then
+	bdCore:addModule("Aura Blacklist", bdCore.blacklistconfig)
+end
+if (not bdCore.modules["Personal Auras"]) then
+	bdCore:addModule("Personal Auras", bdCore.personalconfig)
+end
+--]]
 
 bdCore:addModule("Grid", defaults)
 local config = bdCore.config["Grid"]
 
+
+
 local raidpartyholder = CreateFrame('frame', "bdGrid", UIParent)
-raidpartyholder:RegisterEvent("PLAYER_ENTERING_WORLD")
-raidpartyholder:RegisterEvent("PLAYER_REGEN_ENABLED")
-raidpartyholder:SetSize(config['width'], config['height']*5+8)
+--raidpartyholder:RegisterEvent("PLAYER_ENTERING_WORLD")
+--raidpartyholder:RegisterEvent("PLAYER_REGEN_ENABLED")
+raidpartyholder:SetSize(config['width']+2, config['height']*5+8)
 raidpartyholder:EnableMouse()
-raidpartyholder:SetPoint("TOPLEFT", UIParent, "CENTER", -200,(config['height']*5+8)/2)
+raidpartyholder:SetPoint("TOPLEFT", UIParent, "CENTER", -250,200)
 bdCore:makeMovable(raidpartyholder)
 
 -- make sizes outside of combat
 function grid:frameSize(frame)
+	if (InCombatLockdown()) then return end
 	frame:SetSize(config['width'], config['height'])
 	frame.Health:SetSize(config['width'], config['height'])
 	frame.Debuffs:SetSize(44, 22)
@@ -91,36 +150,48 @@ function grid:frameSize(frame)
 	frame.Dispel:SetSize(60, 50)
 	frame.Buffs:SetPoint("TOPLEFT", frame.Health, "TOPLEFT")
 	frame.Debuffs:SetPoint("CENTER", frame.Health, "CENTER")
+	frame.Buffs:SetFrameLevel(27)
+	frame.Debuffs:SetFrameLevel(27)
 	
-	if (config.roleicon) then
-		frame.LFDRole:Show()
-	else
+	if (config.powerdisplay == "None") then
+		frame.Power:Hide()
+	elseif (config.powerdisplay == "Healers" and role == "HEALER") then
+		frame.Power:Show()
+	elseif (config.powerdisplay == "All") then
+		frame.Power:Show()
+	end
+
+	if (not config.roleicon) then
 		frame.LFDRole:Hide()
 	end
 end
---[[
-function grid:containerSize()
-	-- local num = GetNumGroupMembers()
-	-- local size = math.floor(num/5);
-	-- if (size == 0) then
-		-- size = 1
-	-- end
-	-- if (size > config['num_groups']) then
-		-- size = config['num_groups']
-	-- end
-	
-	if (not UnitAffectingCombat('player')) then
-		raidpartyholder:SetSize(config['width'], config['height']+8)
-	end
-end--]]
 
--- Load
+-- Load 
+local index = 1;
 function grid.layout(self, unit)
 	self:RegisterForClicks('AnyDown')
 	self.unit = unit
 	
+	if (unit == "raid" or unit == "party") then
+		self.unit = "raid"..index
+	else
+		self.unit = unit
+	end
+	
+	function self.configUpdate(self)
+		local role = UnitGroupRolesAssigned(self.unit)
+		self.Power:Hide()
+		if (config.powerdisplay == "None") then
+			self.Power:Hide()
+		elseif (config.powerdisplay == "Healers" and role == "HEALER") then
+			self.Power:Show()
+		elseif (config.powerdisplay == "All") then
+			self.Power:Show()
+		end
+	end
+	
 	-- Health
-	self.Health = self.Health or CreateFrame("StatusBar", nil, self)
+	self.Health = CreateFrame("StatusBar", nil, self)
 	self.Health:SetStatusBarTexture(bdCore.media.flat)
 	self.Health:SetAllPoints(self)
 	self.Health.frequentUpdates = true
@@ -135,28 +206,20 @@ function grid.layout(self, unit)
 		
 		if (config.invert) then
 			self.Health:SetStatusBarColor(unpack(bdCore.media.backdrop))
-			self.Health.background:SetBackdropColor(r/2, g/2, b/2)
+			self.Health.background:SetVertexColor(r/2, g/2, b/2)
 			self.Short:SetTextColor(r*1.1, g*1.1, b*1.1)
-			self.TotalAbsorb:SetStatusBarColor(1,1,1,.07)
+			--self.TotalAbsorb:SetStatusBarColor(1,1,1,.07)
 		else
 			self.Health:SetStatusBarColor(r/2, g/2, b/2)
-			self.Health.background:SetBackdropColor(unpack(bdCore.media.backdrop))
+			self.Health.background:SetVertexColor(unpack(bdCore.media.backdrop))
 			self.Short:SetTextColor(1,1,1)
-			self.TotalAbsorb:SetStatusBarColor(.1,.1,.1,.5)
+			--self.TotalAbsorb:SetStatusBarColor(.1,.1,.1,.5)
 		end
 	end
 	
-	-- absorb
-	self.TotalAbsorb = self.TotalAbsorb or CreateFrame('StatusBar', nil, self.Health)
-	--self.TotalAbsorb:SetFrameLevel(20)
-	self.TotalAbsorb:SetPoint("TOPLEFT", self.Health, "TOPLEFT", 0, 0)
-	self.TotalAbsorb:SetPoint("BOTTOMRIGHT", self.Health, "BOTTOMRIGHT", 0, 0)
-	self.TotalAbsorb:SetStatusBarTexture(bdCore.media.flat)
-	self.TotalAbsorb:SetStatusBarColor(.1,.1,.1,.5)
-	
 	-- Tags
 	-- Status (offline/dead)
-	self.Status = self.Status or self.Health:CreateFontString(nil)
+	self.Status = self.Health:CreateFontString(nil)
 	self.Status:SetFont(bdCore.media.font, 12, "OUTLINE")
 	self.Status:SetPoint('BOTTOMLEFT', self, "BOTTOMLEFT", 0, 0)
 	oUF.Tags.Events["status"] = "UNIT_HEALTH  UNIT_CONNECTION"
@@ -170,11 +233,45 @@ function grid.layout(self, unit)
 		end
 	end
 	
+	
+	-- Absorb
+	self.TotalAbsorb = CreateFrame('StatusBar', nil, self.Health)
+	self.TotalAbsorb:SetAllPoints(self.Health)
+	self.TotalAbsorb:SetStatusBarTexture(bdCore.media.flat)
+	self.TotalAbsorb:SetStatusBarColor(.1,.1,.1,.6)
+	
+	self.HealAbsorb = CreateFrame('StatusBar', nil, self.Health)
+	self.HealAbsorb:SetAllPoints(self.Health)
+	self.HealAbsorb:SetStatusBarTexture(bdCore.media.flat)
+	self.HealAbsorb:SetStatusBarColor(.2,0,0,.5)
+	
+	self.HealPredict = CreateFrame('StatusBar', nil, self.Health)
+	self.HealPredict:SetAllPoints(self.Health)
+	self.HealPredict:SetStatusBarTexture(bdCore.media.flat)
+	self.HealPredict:SetStatusBarColor(0.6,1,0.6,.2)
+	
+	-- Power
+	self.Power = CreateFrame("StatusBar", nil, self.Health)
+	self.Power:SetStatusBarTexture(bdCore.media.flat)
+	self.Power:ClearAllPoints()
+	self.Power:SetPoint("BOTTOMLEFT", self.Health, "BOTTOMLEFT", 0, 0)
+	self.Power:SetPoint("TOPRIGHT", self.Health, "BOTTOMRIGHT",0,2)
+	self.Power:SetAlpha(0.8)
+	self.Power.frequentUpdates = true
+	self.Power.colorPower = true
+	self.Power.border = self.Health:CreateTexture(nil)
+	self.Power.border:SetPoint("TOPRIGHT", self.Power, "TOPRIGHT", 0, 2)
+	self.Power.border:SetPoint("BOTTOMLEFT", self.Power, "TOPLEFT", 0, 0)
+	
 	-- shortname
-	self.Short = self.Short or self.Health:CreateFontString(nil,"OVERLAY")
+	self.nameAnchor = CreateFrame("frame",nil, self.Health) -- because frame level is acting bizare as hell
+	self.nameAnchor:SetPoint("BOTTOMRIGHT", self.Health, "BOTTOMRIGHT", -1, 1)
+	self.nameAnchor:SetPoint("TOPLEFT", self.Health, "BOTTOMLEFT", 1, 20)
+	self.nameAnchor:SetFrameLevel(6)
+	self.Short = self.nameAnchor:CreateFontString(nil,"OVERLAY")
 	self.Short:SetFont(bdCore.media.font, 13)
 	self.Short:SetShadowOffset(1,-1)
-	self.Short:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -1, 1)
+	self.Short:SetPoint("BOTTOMRIGHT", self.nameAnchor, "BOTTOMRIGHT", 0,0)
 	self.Short:SetJustifyH("RIGHT")
 	
 	oUF.Tags.Events["self.Short"] = "UNIT_NAME_UPDATE"
@@ -189,37 +286,47 @@ function grid.layout(self, unit)
 	
 	-- Range
 	self:SetScript("OnEnter", function()
-		self.arrowmouseover = true
+		--[[self.arrowmouseover = true
 		if (not self.OoR) then
 			bdCore:arrow(self, self.unit)
-		end
+		end--]]
 		if (not config.hidetooltips) then
 			UnitFrame_OnEnter(self)
-		--else
-		--	UnitFrame_OnLeave(self)
 		end
 	end)
 	self:SetScript("OnLeave", function()
-		self.freebarrow:Hide()
-		self.arrowmouseover = false
+		--self.freebarrow:Hide()
+		--self.arrowmouseover = false
 		UnitFrame_OnLeave(self)
 	end)
 
 	
 	-- Raid Icon
-	self.RaidIcon = self.RaidIcon or self.Health:CreateTexture(nil, "OVERLAY", nil, 1)
+	self.RaidIcon = self.Health:CreateTexture(nil, "OVERLAY", nil, 1)
 	self.RaidIcon:SetSize(12, 12)
 	self.RaidIcon:SetPoint("TOP", self, "TOP", 0, -2)
 	
 	-- roll icon
-	self.LFDRole = self.LFDRole or self.Health:CreateTexture(nil, "OVERLAY")
+	self.LFDRole = self.Health:CreateTexture(nil, "OVERLAY")
 	self.LFDRole:SetSize(12, 12)
-	self.LFDRole:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT",2,2)
-	self.LFDRole.PostUpdate = function(self, role)
-		if (role ~= "DAMAGER" and config.roleicon) then
-			self:Show()
-		else
-			self:Hide()
+	self.LFDRole:SetPoint("BOTTOMLEFT", self.Health, "BOTTOMLEFT",2,2)
+	self.LFDRole.Override = function(self,event)
+		local role = UnitGroupRolesAssigned(self.unit)
+		self.LFDRole:Hide()
+		if (config.roleicon) then
+			if (role and (role == "HEALER" or role == "TANK")) then
+				self.LFDRole:SetTexCoord(GetTexCoordsForRoleSmallCircle(role))
+				self.LFDRole:Show()
+			end
+		end
+		
+		self.Power:Hide()
+		if (config.powerdisplay == "None") then
+			self.Power:Hide()
+		elseif (config.powerdisplay == "Healers" and role == "HEALER") then
+			self.Power:Show()
+		elseif (config.powerdisplay == "All") then
+			self.Power:Show()
 		end
 	end
 	
@@ -228,19 +335,19 @@ function grid.layout(self, unit)
 		insideAlpha = 1,
 		outsideAlpha = .4,
 	}
-	self.freebRange = range
-	self.Range = false
+	--self.freebRange = range
+	self.Range = range
 	
 	-- Readycheck
-	self.ReadyCheck = self.ReadyCheck or self.Health:CreateTexture(nil, 'OVERLAY', nil, 7)
+	self.ReadyCheck = self.Health:CreateTexture(nil, 'OVERLAY', nil, 7)
 	self.ReadyCheck:SetPoint('BOTTOM', self, 'BOTTOM', 0, 2)
 	
 	-- ResurrectIcon
-	self.ResurrectIcon = self.ResurrectIcon or self.Health:CreateTexture(nil, 'OVERLAY')
+	self.ResurrectIcon = self.Health:CreateTexture(nil, 'OVERLAY')
 	self.ResurrectIcon:SetPoint('CENTER', self, "CENTER", 0,0)
 	
 	-- Threat
-	self.Threat = self.Threat or CreateFrame('frame', nil, self)
+	self.Threat = CreateFrame('frame', nil, self)
 	self.Threat:SetFrameLevel(95)
 	self.Threat:SetPoint('TOPRIGHT', self, "TOPRIGHT", 1, 1)
 	self.Threat:SetPoint('BOTTOMLEFT', self, "BOTTOMLEFT", -1, -1)
@@ -250,7 +357,7 @@ function grid.layout(self, unit)
 	self.Threat.SetVertexColor = function() return end
 	
 	-- Buffs
-	self.Buffs = self.Buffs or CreateFrame("Frame", nil, self.Health)
+	self.Buffs = CreateFrame("Frame", nil, self.Health)
 	self.Buffs:SetPoint("TOPLEFT", self.Health, "TOPLEFT")
 	self.Buffs:SetFrameLevel(21)
 	
@@ -263,18 +370,19 @@ function grid.layout(self, unit)
 	self.Buffs['growth-y'] = "DOWN"
 	self.Buffs['growth-x'] = "RIGHT"
 
-	self.Buffs.CustomFilter = function(unit, icon, button, name, rank, texture, count, dtype, duration, timeLeft, caster, isStealable, shouldConsolidate, spellID)
+	self.Buffs.CustomFilter = function(icons, unit, icon, name, rank, texture, count, dispelType, duration, expiration, caster, isStealable, nameplateShowSelf, spellID, canApply, isBossDebuff, casterIsPlayer, nameplateShowAll,timeMod, effect1, effect2, effect3)
 		return bdCore:filterAura(name,caster)
 	end
 	self.Buffs.PostUpdateIcon = function(buffs, unit, button) 
 		button:SetAlpha(0.8)
 		button:EnableMouse(false)
 		button.cd:GetRegions():SetAlpha(0)
+		button.cd:SetReverse(true)
 		button.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 	end
 	
 	-- Dispells
-	self.Dispel = self.Dispel or CreateFrame('frame', nil, self.Health)
+	self.Dispel = CreateFrame('frame', nil, self.Health)
 	self.Dispel:SetFrameLevel(100)
 	self.Dispel:SetPoint('TOPRIGHT', self, "TOPRIGHT", 1, 1)
 	self.Dispel:SetPoint('BOTTOMLEFT', self, "BOTTOMLEFT", -1, -1)
@@ -328,19 +436,19 @@ function grid.layout(self, unit)
 	end)
 	
 	-- Debuffs
-	self.Debuffs = self.Debuffs or CreateFrame("Frame", nil, self.Health)
+	self.Debuffs = CreateFrame("Frame", nil, self.Health)
 	self.Debuffs:SetFrameLevel(21)
 	self.Debuffs:SetPoint("CENTER", self.Health, "CENTER")
 	
 	self.Debuffs.initialAnchor  = "CENTER"
-	self.Debuffs.size = 22
+	self.Debuffs.size = 16
 	self.Debuffs.spacing = 1
-	self.Debuffs.num = 2
+	self.Debuffs.num = 3
 	self.Debuffs.onlyShowPlayer = true
 	self.Debuffs['growth-y'] = "DOWN"
 	self.Debuffs['growth-x'] = "RIGHT"
 
-	self.Debuffs.CustomFilter = function(unit, icon, blank, name, rank, texture, count, dtype, duration, timeLeft, caster, isStealable, shouldConsolidate, spellID)
+	self.Debuffs.CustomFilter = function(icons, unit, icon, name, rank, texture, count, dispelType, duration, expiration, caster, isStealable, nameplateShowSelf, spellID, canApply, isBossDebuff, casterIsPlayer, nameplateShowAll,timeMod, effect1, effect2, effect3)
 		return bdCore:filterAura(name,caster)
 	end
 	self.Debuffs.PostUpdateIcon = function(buffs, unit, button)
@@ -348,25 +456,148 @@ function grid.layout(self, unit)
 		button:EnableMouse(false)
 		button.cd:GetRegions():SetAlpha(0)
 		button.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-
-		button:SetBackdrop({bgFile = bdCore.media.flat, edgeFile = bdCore.media.flat, edgeSize = 2})
-		button:SetBackdropColor(.11,.15,.18, 1)
-		button:SetBackdropBorderColor(.06, .08, .09, 1)
 	end
 
 	grid.frames[self] = self; 
+	self.index = index
+	self.unit = unit
+	grid:frameSize(self)
+	
+	local main  = self
+	bdCore:hookEvent("bdGrid_update",function()
+		self.configUpdate(main)
+	end)
+	
+	index = index + 1
+end
 
-	if (not UnitAffectingCombat('player')) then
-		grid:frameSize(self)
+
+local frameHeader
+function enable(self)
+	grid.frames = {}
+	self:SetActiveStyle("bdGrid")
+	
+	local group_order = "1, 2, 3, 4, 5, 6, 7, 8"
+	if (config.group_by == "ROLE") then
+		group_order = "TANK,DAMAGE,HEAL"
+	end
+	if (config.group_by == "CLASS") then
+		group_order = "WARRIOR,DEATHKNIGHT,PALADIN,DRUID,DEMONHUNTER,HUNTER,PRIEST,ROGUE,WARLOCK,MAGE,MONK,SHAMAN"
+	end
+	
+	local vgrowth = "BOTTOM"
+	local yoffset = 2
+	if (config.vgrowth == "DOWN") then
+		vgrowth = "TOP"
+		yoffset = -2
+	end
+	
+
+	frameHeader = self:SpawnHeader(nil, nil, 'raid,party,solo',
+		'showParty', true, 
+		'showPlayer', true, 
+		"showParty", true,
+		"showPlayer", true,
+		"showSolo", true,
+		"showRaid", true,
+		"initial-scale", 1,
+		"unitsPerColumn", 5,
+		"columnSpacing", 2,
+		"xOffset", 2,
+		"maxColumns",config.num_groups,
+		"groupingOrder",group_order,
+		"columnAnchorPoint",config.growth,
+		"initial-width",config.width,
+		"initial-height",config.height,
+		"point",vgrowth,
+		"yOffset",yoffset,
+		"groupBy",config.group_by
+	);
+	
+	
+	frameHeader:SetPoint(vgrowth.."RIGHT", raidpartyholder, vgrowth.."RIGHT", 0, 0)
+	if (config.growth == "RIGHT") then
+		frameHeader:SetPoint(vgrowth.."LEFT", raidpartyholder, vgrowth.."LEFT", 0, 0)
 	end
 end
 
+function grid:callback()
+	for k, frame in pairs(grid.frames) do
+		grid:frameSize(frame)
+	end
+end
+
+oUF:RegisterStyle("bdGrid", grid.layout)
+oUF:Factory(enable)
+
+function grid:refresh()
+	if (InCombatLockdown()) then return end
+	
+	local group_order = "1, 2, 3, 4, 5, 6, 7, 8"
+	if (config.group_by == "ROLE") then
+		group_order = "TANK,DAMAGE,HEAL"
+	end
+	if (config.group_by == "CLASS") then
+		group_order = "WARRIOR,DEATHKNIGHT,PALADIN,DRUID,DEMONHUNTER,HUNTER,PRIEST,ROGUE,WARLOCK,MAGE,MONK,SHAMAN"
+	end
+	local vgrowth = "BOTTOM"
+	local yoffset = 2
+	if (config.vgrowth == "DOWN") then
+		vgrowth = "TOP"
+		yoffset = -2
+	end
+	
+	frameHeader:SetAttribute("maxColumns",config.num_groups)
+	frameHeader:SetAttribute("columnAnchorPoint",config.growth)
+	frameHeader:SetAttribute("initial-width",config.width)
+	frameHeader:SetAttribute("initial-height",config.height)
+	frameHeader:SetAttribute("point",vgrowth)
+	frameHeader:SetAttribute("yOffset",yoffset)
+	frameHeader:SetAttribute("showSolo",config.showsolo)
+	
+	frameHeader:SetAttribute("groupingOrder",group_order)
+	frameHeader:SetAttribute("groupBy",config.group_by)
+	
+	frameHeader:SetPoint(vgrowth.."RIGHT", raidpartyholder, vgrowth.."RIGHT", 0, 0)
+	if (config.growth == "RIGHT") then
+		frameHeader:SetPoint(vgrowth.."LEFT", raidpartyholder, vgrowth.."LEFT", 0, 0)
+	end
+	--[[
+	print("refresh")
+	print(config.num_groups)--]]
+	--[[for k, frame in pairs(grid.frames) do
+		--frame:Kill()
+		frame:Hide()
+		frame.Show = function() return end
+		for k, v in pairs(frame:GetChildren()) do
+			v = nil
+		end
+		frame = nil
+	end
+	
+	oUF:Factory(enable)--]]
+end
+
+grid:RegisterEvent("PLAYER_REGEN_ENABLED")
+grid:RegisterEvent("PLAYER_ENTERING_WORLD")
+grid:SetScript("OnEvent", function(self, event, arg1)
+	grid:callback()
+	grid:refresh()
+end)
+
+CompactRaidFrameManager:UnregisterAllEvents() 
+CompactRaidFrameManager:Hide() 
+CompactRaidFrameContainer:UnregisterAllEvents() 
+CompactRaidFrameContainer:Hide() 
+--[[
 -- Enable
 function grid:enable()
 	for k, frame in pairs(grid.frames) do
 		frame:Kill()
+		frame = nil
 	end
 	grid.frames = {}
+	index = 1
 	oUF:Factory(function(self)
 		self:SetActiveStyle("bdGrid")
 		local party = self:SpawnHeader(nil, nil, 'raid,party,solo',
@@ -381,7 +612,7 @@ function grid:enable()
 			"groupFilter", "1,2,3,4,5,6,7,8",
 			"groupBy", "GROUP",
 			"groupingOrder", "1,2,3,4,5,6,7,8",
-			"maxColumns", config['num_groups'],
+			"maxColumns", config.num_groups,
 			"unitsPerColumn", 5,
 			"columnSpacing", 2,
 			"columnAnchorPoint", config.growth,
@@ -398,10 +629,8 @@ end
 
 grid.frames = {}
 function grid:callback()
-	if (not UnitAffectingCombat("player")) then
-		for k, frame in pairs(grid.frames) do
-			grid:frameSize(frame)
-		end
+	for k, frame in pairs(grid.frames) do
+		grid:frameSize(frame)
 	end
 end
 
@@ -413,10 +642,5 @@ end)
 
 oUF:RegisterStyle("bdGrid", grid.layout)
 grid:enable()
-
-
--- bdCore:hookEvent("loaded_bdcore", function()
-	-- print('loaded bdcore inside of bdgrid')
--- end)
-
+--]]
 -- Disable
