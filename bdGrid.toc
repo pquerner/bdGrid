@@ -1,6 +1,6 @@
-## Interface: 72000
+## Interface: 72500
 ## Title: |cffA02C2Fbd|rGrid
-## Version: 0
+## Version: @project-version@
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
 ## X-oUF: oUFbdGrid
