@@ -21,8 +21,15 @@ defaults[#defaults+1] = {num_groups = {
 	min = 1,
 	max = 8,
 	step = 1,
-	label = "Number of Groups",
+	label = "Default number of Groups",
 	tooltip = "How many groups should be shown at a time",
+	callback = function() grid:refresh() end
+}}
+defaults[#defaults+1] = {intel_groups = {
+	type = "checkbox",
+	value = true,
+	label = "Automatically set group size.",
+	tooltip = "When in LFR, show 5 groups, mythic show 4, etc.",
 	callback = function() grid:refresh() end
 }}
 defaults[#defaults+1] = {width = {
@@ -59,7 +66,6 @@ defaults[#defaults+1] = {invert = {
 	tooltip = "Make the main color of the frames a dark grey, and the backgrounds the class color.",
 	callback = function() grid:refresh() end
 }}
-
 defaults[#defaults+1] = {roleicon = {
 	type = "checkbox",
 	value = false,
@@ -67,7 +73,6 @@ defaults[#defaults+1] = {roleicon = {
 	tooltip = "Will only show icon for tanks/healers (only in groups)",
 	callback = function() grid:callback() end
 }}
-
 defaults[#defaults+1] = {showsolo = {
 	type = "checkbox",
 	value = true,
@@ -79,69 +84,47 @@ defaults[#defaults+1] = {tab = {
 	type = "tab",
 	value = "Growth & Grouping"
 }}
-defaults[#defaults+1] = {vgrowth = {
+defaults[#defaults+1] = {group_growth = {
 	type = "dropdown",
-	value = "DOWN",
-	options = {"UP","DOWN"},
-	label = "Vertical Growth Direction",
-	tooltip = "The direction that new members in groups should be shown.",
+	value = "Left",
+	options = {"Left","Right","Upwards","Downwards"},
+	label = "New group growth direction",
+	tooltip = "Growth direction for when a new group is added.",
 	callback = function() grid:refresh() end
-}}
-
-defaults[#defaults+1] = {growth = {
-	type = "dropdown",
-	value = "LEFT",
-	options = {"LEFT","RIGHT"},
-	label = "Horizontal Growth Direction",
-	tooltip = "The direction that new groups should be shown.",
+}
+defaults[#defaults+1] = {new_player_reverse = {
+	type = "checkbox",
+	value = true,
+	label = "Reverse new player growth.",
+	tooltip = "When a new player is added the default growth direction is Downward or Right depending on your group growth."
 	callback = function() grid:refresh() end
-}}
-
-defaults[#defaults+1] = {group_by = {
+}
+defaults[#defaults+1] = {group_sort = {
 	type = "dropdown",
-	value = "GROUP",
-	options = {"GROUP","ROLE","CLASS"},
+	value = "Group",
+	options = {"Group","Role","Class","Name"},
 	label = "Group By",
 	tooltip = "Method by which the groups should be formed.",
 	callback = function() grid:refresh() end
 }}
 
+-- if another bdAddon hasn't added auras to config, add them here
 if (not bdCore.modules["Auras"]) then
 	bdCore:addModule("Auras", bdCore.auraconfig)
 end
---[[
-if (not bdCore.modules["Aura Whitelist"]) then
-	bdCore:addModule("Aura Whitelist", bdCore.whitelistconfig)
-end
-if (not bdCore.modules["Aura Blacklist"]) then
-	bdCore:addModule("Aura Blacklist", bdCore.blacklistconfig)
-end
-if (not bdCore.modules["Personal Auras"]) then
-	bdCore:addModule("Personal Auras", bdCore.personalconfig)
-end
---]]
+
 
 bdCore:addModule("Grid", defaults)
 local config = bdCore.config["Grid"]
 
-
-
-local raidpartyholder = CreateFrame('frame', "bdGrid", UIParent)
---raidpartyholder:RegisterEvent("PLAYER_ENTERING_WORLD")
---raidpartyholder:RegisterEvent("PLAYER_REGEN_ENABLED")
-raidpartyholder:SetSize(config['width']+2, config['height']*5+8)
-raidpartyholder:EnableMouse()
-raidpartyholder:SetPoint("TOPLEFT", UIParent, "CENTER", -250,200)
-bdCore:makeMovable(raidpartyholder)
-
 -- make sizes outside of combat
 function grid:frameSize(frame)
 	if (InCombatLockdown()) then return end
-	frame:SetSize(config['width'], config['height'])
-	frame.Health:SetSize(config['width'], config['height'])
+	--frame:SetSize(config['width'], config['height'])
+	--frame.Health:SetSize(config['width'], config['height'])
 	frame.Debuffs:SetSize(44, 22)
 	frame.RaidIcon:SetSize(12, 12)
-	frame.Short:SetWidth(config['width'])
+	frame.Short:SetWidth(config.width)
 	frame.ReadyCheck:SetSize(12, 12)
 	frame.ResurrectIcon:SetSize(16, 16)
 	frame.Threat:SetSize(60, 50)
@@ -471,28 +454,16 @@ function grid.layout(self, unit)
 	index = index + 1
 end
 
+local raidpartyholder = CreateFrame('frame', "bdGrid", UIParent)
+raidpartyholder:SetSize(config['width']+2, config['height']*5+8)
+raidpartyholder:EnableMouse()
+raidpartyholder:SetPoint("TOPLEFT", UIParent, "CENTER", -250,200)
+bdCore:makeMovable(raidpartyholder)
 
-local frameHeader
+local frameHeader = false
 function enable(self)
-	grid.frames = {}
 	self:SetActiveStyle("bdGrid")
 	
-	local group_order = "1, 2, 3, 4, 5, 6, 7, 8"
-	if (config.group_by == "ROLE") then
-		group_order = "TANK,DAMAGE,HEAL"
-	end
-	if (config.group_by == "CLASS") then
-		group_order = "WARRIOR,DEATHKNIGHT,PALADIN,DRUID,DEMONHUNTER,HUNTER,PRIEST,ROGUE,WARLOCK,MAGE,MONK,SHAMAN"
-	end
-	
-	local vgrowth = "BOTTOM"
-	local yoffset = 2
-	if (config.vgrowth == "DOWN") then
-		vgrowth = "TOP"
-		yoffset = -2
-	end
-	
-
 	frameHeader = self:SpawnHeader(nil, nil, 'raid,party,solo',
 		'showParty', true, 
 		'showPlayer', true, 
@@ -514,11 +485,7 @@ function enable(self)
 		"groupBy",config.group_by
 	);
 	
-	
-	frameHeader:SetPoint(vgrowth.."RIGHT", raidpartyholder, vgrowth.."RIGHT", 0, 0)
-	if (config.growth == "RIGHT") then
-		frameHeader:SetPoint(vgrowth.."LEFT", raidpartyholder, vgrowth.."LEFT", 0, 0)
-	end
+	grid:refresh()
 end
 
 function grid:callback()
@@ -527,55 +494,132 @@ function grid:callback()
 	end
 end
 
+grid.frames = {}
 oUF:RegisterStyle("bdGrid", grid.layout)
 oUF:Factory(enable)
 
 function grid:refresh()
 	if (InCombatLockdown()) then return end
 	
-	local group_order = "1, 2, 3, 4, 5, 6, 7, 8"
-	if (config.group_by == "ROLE") then
-		group_order = "TANK,DAMAGE,HEAL"
-	end
-	if (config.group_by == "CLASS") then
-		group_order = "WARRIOR,DEATHKNIGHT,PALADIN,DRUID,DEMONHUNTER,HUNTER,PRIEST,ROGUE,WARLOCK,MAGE,MONK,SHAMAN"
-	end
-	local vgrowth = "BOTTOM"
-	local yoffset = 2
-	if (config.vgrowth == "DOWN") then
-		vgrowth = "TOP"
-		yoffset = -2
+	local group_by
+	local group_sort
+	local sort_method
+	local yOffset
+	local xOffset
+	local new_group_anchor
+	local new_player_anchor
+	local hgrowth
+	local vgrowth
+	
+	-- sorting options
+	if (config.group_sort == "Group") then
+		group_by = "GROUP"
+		group_sort = "1, 2, 3, 4, 5, 6, 7, 8"
+		sort_method = "INDEX"
+	elseif (config.group_sort == "Role") then
+		group_by = "ROLE"
+		group_sort = "TANK,DAMAGE,NONE,HEAL"
+		sort_method = "NAME"
+	elseif (config.group_sort == "Name") then
+		group_by = nil
+		group_sort = "1, 2, 3, 4, 5, 6, 7, 8"
+		sort_method = "NAME"
+	elseif (config.group_sort == "Class") then
+		group_by = "CLASS"
+		group_sort = "WARRIOR,DEATHKNIGHT,PALADIN,DRUID,MONK,ROGUE,DEMONHUNTER,HUNTER,PRIEST,WARLOCK,MAGE,SHAMAN"
+		sort_method = "NAME"
 	end
 	
-	frameHeader:SetAttribute("maxColumns",config.num_groups)
-	frameHeader:SetAttribute("columnAnchorPoint",config.growth)
-	frameHeader:SetAttribute("initial-width",config.width)
-	frameHeader:SetAttribute("initial-height",config.height)
-	frameHeader:SetAttribute("point",vgrowth)
-	frameHeader:SetAttribute("yOffset",yoffset)
+	-- group growth/spacing
+	if (config.group_growth = "Upwards") then
+		new_group_anchor = "BOTTOM"
+		yOffset = config.spacing
+	if (config.group_growth = "Downwards") then
+		new_group_anchor = "TOP"
+		xOffset = config.spacing
+	if (config.group_growth = "Left") then
+		new_group_anchor = "RIGHT"
+		xOffset = -config.spacing
+	elseif (config.group_growth = "Right") then
+		new_group_anchor = "LEFT"
+		xOffset = config.spacing
+	end
+	
+	-- player growth/spacing
+	if (not config.new_player_reverse) then
+		if (config.group_growth = "Upwards" or config.group_growth = "Downwards") then
+			new_player_anchor = "LEFT"
+			xOffset = config.spacing
+		elseif (config.group_growth = "Left" or config.group_growth = "Right") then
+			new_player_anchor = "TOP"
+			yOffset = -config.spacing
+		end
+	elseif (config.new_player_reverse) then
+		if (config.group_growth = "Upwards" or config.group_growth = "Downwards") then
+			new_player_anchor = "RIGHT"
+			xOffset = -config.spacing
+		elseif (config.group_growth = "Left" or config.group_growth = "Right") then
+			new_player_anchor = "BOTTOM"
+			yOffset = config.spacing
+		end
+	end
+	
+	-- growth/spacing
+	frameHeader:SetAttribute("columnAnchorPoint",new_group_anchor)
+	frameHeader:SetAttribute("point",new_player_anchor)
+	frameHeader:SetAttribute("yOffset",yOffset)
+	frameHeader:SetAttribute("xOffset",xOffset)
+	
+	-- when to show
 	frameHeader:SetAttribute("showSolo",config.showsolo)
 	
-	frameHeader:SetAttribute("groupingOrder",group_order)
-	frameHeader:SetAttribute("groupBy",config.group_by)
+	local difficultySize = {[3] = 1, [4] = 25, [5] = 10, [6] = 25, [7] = 25, [9] = 40, [14] = 30, [15] = 30, [16] = 20, [17] = 30, [18] = 40, [20] = 25}
 	
-	frameHeader:SetPoint(vgrowth.."RIGHT", raidpartyholder, vgrowth.."RIGHT", 0, 0)
-	if (config.growth == "RIGHT") then
-		frameHeader:SetPoint(vgrowth.."LEFT", raidpartyholder, vgrowth.."LEFT", 0, 0)
-	end
-	--[[
-	print("refresh")
-	print(config.num_groups)--]]
-	--[[for k, frame in pairs(grid.frames) do
-		--frame:Kill()
-		frame:Hide()
-		frame.Show = function() return end
-		for k, v in pairs(frame:GetChildren()) do
-			v = nil
+	-- group limit
+	frameHeader:SetAttribute("maxColumns", config.num_groups) -- default min
+	if (config.intel_groups) then
+		local difficulty = select(3, GetInstanceInfo()) -- maybe use maxPlayers instead?
+		if (difficultySize[difficulty]) then
+			frameHeader:SetAttribute("maxColumns", (difficultySize[difficulty] / 5) )
 		end
-		frame = nil
 	end
+	frameHeader:SetAttribute("initial-width",config.width)
+	frameHeader:SetAttribute("initial-height",config.height)
 	
-	oUF:Factory(enable)--]]
+	-- grouping/sorting
+	frameHeader:SetAttribute("groupBy",group_by)
+	frameHeader:SetAttribute("groupingOrder",group_sort)
+	frameHeader:SetAttribute("sortMethod",sort_method)
+	
+	-- move the container to the mover, set up for growth directions
+	frameHeader:ClearAllPoints();
+	if (config.group_growth = "Right") then
+		raidpartyholder:SetSize(config.width, config.height*5+8)
+		hgrowth = "LEFT"
+		vgrowth = "TOP"
+		if (config.new_player_reverse) then vgrowth = "BOTTOM" end
+		
+	elseif (config.group_growth = "Left") then
+		raidpartyholder:SetSize(config.width, config.height*5+8)
+		hgrowth = "RIGHT"
+		vgrowth = "TOP"
+		if (config.new_player_reverse) then vgrowth = "BOTTOM" end
+		
+	elseif (config.group_growth = "Upwards") then
+		raidpartyholder:SetSize(config.width*5+8, config.height)
+		hgrowth = "LEFT"
+		vgrowth = "BOTTOM"
+		if (config.new_player_reverse) then hgrowth = "RIGHT" end
+		
+	elseif (config.group_growth = "Downwards") then
+		raidpartyholder:SetSize(config.width*5+8, config.height)
+		hgrowth = "LEFT"
+		vgrowth = "TOP"
+		if (config.new_player_reverse) then hgrowth = "RIGHT" end
+		
+	end
+	frameHeader:SetPoint(vgrowth..hgrowth, raidpartyholder, vgrowth..hgrowth, 0, 0)
+
 end
 
 grid:RegisterEvent("PLAYER_REGEN_ENABLED")
@@ -585,62 +629,9 @@ grid:SetScript("OnEvent", function(self, event, arg1)
 	grid:refresh()
 end)
 
+-- disable blizzard raid frames
 CompactRaidFrameManager:UnregisterAllEvents() 
 CompactRaidFrameManager:Hide() 
 CompactRaidFrameContainer:UnregisterAllEvents() 
 CompactRaidFrameContainer:Hide() 
---[[
--- Enable
-function grid:enable()
-	for k, frame in pairs(grid.frames) do
-		frame:Kill()
-		frame = nil
-	end
-	grid.frames = {}
-	index = 1
-	oUF:Factory(function(self)
-		self:SetActiveStyle("bdGrid")
-		local party = self:SpawnHeader(nil, nil, 'raid,party,solo',
-			'showParty', true, 
-			'showPlayer', true, 
-			'yOffset', -2,
-			"xOffset", 2,
-			"showParty", true,
-			"showPlayer", true,
-			"showSolo", true,
-			"showRaid", true,
-			"groupFilter", "1,2,3,4,5,6,7,8",
-			"groupBy", "GROUP",
-			"groupingOrder", "1,2,3,4,5,6,7,8",
-			"maxColumns", config.num_groups,
-			"unitsPerColumn", 5,
-			"columnSpacing", 2,
-			"columnAnchorPoint", config.growth,
-			"point", "TOP"
-		)
-		party:SetPoint("TOPRIGHT", raidpartyholder, "TOPRIGHT", 0, 0)
-		if (config.growth == "RIGHT") then
-			party:SetPoint("TOPLEFT", raidpartyholder, "TOPLEFT", 0, 0)
-		end
-	end)
-	
-	grid:callback()
-end
 
-grid.frames = {}
-function grid:callback()
-	for k, frame in pairs(grid.frames) do
-		grid:frameSize(frame)
-	end
-end
-
-grid:RegisterEvent("PLAYER_REGEN_ENABLED")
-grid:RegisterEvent("PLAYER_ENTERING_WORLD")
-grid:SetScript("OnEvent", function(self, event, arg1)
-	grid:callback()
-end)
-
-oUF:RegisterStyle("bdGrid", grid.layout)
-grid:enable()
---]]
--- Disable
