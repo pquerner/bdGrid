@@ -120,7 +120,6 @@ local config = bdCore.config["Grid"]
 -- make sizes outside of combat
 function grid:frameSize(frame)
 	if (InCombatLockdown()) then return end
-	frame:ClearAllPoints()
 	frame:SetSize(config.width, config.height)
 	--frame.Health:SetSize(config.width, config.height)
 	frame.Debuffs:SetSize(44, 22)
@@ -615,6 +614,10 @@ function grid:refresh()
 	
 	grid:buildAttributes()
 	grid:resizeRaidHolder()
+	
+	for k, frame in pairs(grid.frames) do
+		frame:ClearAllPoints()
+	end
 	
 	-- growth/spacing
 	frameHeader:SetAttribute("columnAnchorPoint",new_group_anchor)
