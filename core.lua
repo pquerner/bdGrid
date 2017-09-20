@@ -114,8 +114,8 @@ if (not bdCore.modules["Auras"]) then
 end
 
 
-bdCore:addModule("Grid", defaults)
-local config = bdCore.config["Grid"]
+local config = bdCore:addModule("Grid", defaults)
+--local config = bdCore.config["Grid"]
 
 -- make sizes outside of combat
 function grid:frameSize(frame)
