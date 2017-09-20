@@ -91,14 +91,14 @@ defaults[#defaults+1] = {group_growth = {
 	label = "New group growth direction",
 	tooltip = "Growth direction for when a new group is added.",
 	callback = function() grid:refresh() end
-}
+}}
 defaults[#defaults+1] = {new_player_reverse = {
 	type = "checkbox",
-	value = true,
+	value = false,
 	label = "Reverse new player growth.",
-	tooltip = "When a new player is added the default growth direction is Downward or Right depending on your group growth."
+	tooltip = "When a new player is added the default growth direction is Downward or Right depending on your group growth.",
 	callback = function() grid:refresh() end
-}
+}}
 defaults[#defaults+1] = {group_sort = {
 	type = "dropdown",
 	value = "Group",
@@ -120,8 +120,8 @@ local config = bdCore:addModule("Grid", defaults)
 -- make sizes outside of combat
 function grid:frameSize(frame)
 	if (InCombatLockdown()) then return end
-	--frame:SetSize(config['width'], config['height'])
-	--frame.Health:SetSize(config['width'], config['height'])
+	frame:SetSize(config.width, config.height)
+	--frame.Health:SetSize(config.width, config.height)
 	frame.Debuffs:SetSize(44, 22)
 	frame.RaidIcon:SetSize(12, 12)
 	frame.Short:SetWidth(config.width)
@@ -461,55 +461,20 @@ raidpartyholder:SetPoint("TOPLEFT", UIParent, "CENTER", -250,200)
 bdCore:makeMovable(raidpartyholder)
 
 local frameHeader = false
-function enable(self)
-	self:SetActiveStyle("bdGrid")
-	
-	frameHeader = self:SpawnHeader(nil, nil, 'raid,party,solo',
-		'showParty', true, 
-		'showPlayer', true, 
-		"showParty", true,
-		"showPlayer", true,
-		"showSolo", true,
-		"showRaid", true,
-		"initial-scale", 1,
-		"unitsPerColumn", 5,
-		"columnSpacing", 2,
-		"xOffset", 2,
-		"maxColumns",config.num_groups,
-		"groupingOrder",group_order,
-		"columnAnchorPoint",config.growth,
-		"initial-width",config.width,
-		"initial-height",config.height,
-		"point",vgrowth,
-		"yOffset",yoffset,
-		"groupBy",config.group_by
-	);
-	
-	grid:refresh()
-end
+local group_by
+local group_sort
+local sort_method
+local yOffset
+local xOffset
+local new_group_anchor
+local new_player_anchor
+local hgrowth
+local vgrowth
+local num_groups
 
-function grid:callback()
-	for k, frame in pairs(grid.frames) do
-		grid:frameSize(frame)
-	end
-end
+function grid:buildAttributes()
 
-grid.frames = {}
-oUF:RegisterStyle("bdGrid", grid.layout)
-oUF:Factory(enable)
-
-function grid:refresh()
-	if (InCombatLockdown()) then return end
-	
-	local group_by
-	local group_sort
-	local sort_method
-	local yOffset
-	local xOffset
-	local new_group_anchor
-	local new_player_anchor
-	local hgrowth
-	local vgrowth
+	config.spacing = 2
 	
 	-- sorting options
 	if (config.group_sort == "Group") then
@@ -531,37 +496,127 @@ function grid:refresh()
 	end
 	
 	-- group growth/spacing
-	if (config.group_growth = "Upwards") then
+	if (config.group_growth == "Upwards") then
 		new_group_anchor = "BOTTOM"
 		yOffset = config.spacing
-	if (config.group_growth = "Downwards") then
+	elseif (config.group_growth == "Downwards") then
 		new_group_anchor = "TOP"
 		xOffset = config.spacing
-	if (config.group_growth = "Left") then
+	elseif (config.group_growth == "Left") then
 		new_group_anchor = "RIGHT"
 		xOffset = -config.spacing
-	elseif (config.group_growth = "Right") then
+	elseif (config.group_growth == "Right") then
 		new_group_anchor = "LEFT"
 		xOffset = config.spacing
 	end
 	
 	-- player growth/spacing
 	if (not config.new_player_reverse) then
-		if (config.group_growth = "Upwards" or config.group_growth = "Downwards") then
+		if (config.group_growth == "Upwards" or config.group_growth == "Downwards") then
 			new_player_anchor = "LEFT"
 			xOffset = config.spacing
-		elseif (config.group_growth = "Left" or config.group_growth = "Right") then
+		elseif (config.group_growth == "Left" or config.group_growth == "Right") then
 			new_player_anchor = "TOP"
 			yOffset = -config.spacing
 		end
 	elseif (config.new_player_reverse) then
-		if (config.group_growth = "Upwards" or config.group_growth = "Downwards") then
+		if (config.group_growth == "Upwards" or config.group_growth == "Downwards") then
 			new_player_anchor = "RIGHT"
 			xOffset = -config.spacing
-		elseif (config.group_growth = "Left" or config.group_growth = "Right") then
+		elseif (config.group_growth == "Left" or config.group_growth == "Right") then
 			new_player_anchor = "BOTTOM"
 			yOffset = config.spacing
 		end
+	end
+	
+	-- group limit
+	local difficultySize = {[3] = 1, [4] = 25, [5] = 10, [6] = 25, [7] = 25, [9] = 40, [14] = 30, [15] = 30, [16] = 20, [17] = 30, [18] = 40, [20] = 25}
+	num_groups = config.num_groups
+	if (config.intel_groups) then
+		local difficulty = select(3, GetInstanceInfo()) -- maybe use maxPlayers instead?
+		if (difficultySize[difficulty]) then
+			num_groups = (difficultySize[difficulty] / 5)
+		end
+	end
+
+end
+
+function grid:resizeRaidHolder()
+	-- move the container to the mover, set up for growth directions
+	frameHeader:ClearAllPoints();
+	if (config.group_growth == "Right") then
+		raidpartyholder:SetSize(config.width, config.height*5+8)
+		hgrowth = "LEFT"
+		vgrowth = "TOP"
+		if (config.new_player_reverse) then vgrowth = "BOTTOM" end
+		
+	elseif (config.group_growth == "Left") then
+		raidpartyholder:SetSize(config.width, config.height*5+8)
+		hgrowth = "RIGHT"
+		vgrowth = "TOP"
+		if (config.new_player_reverse) then vgrowth = "BOTTOM" end
+		
+	elseif (config.group_growth == "Upwards") then
+		raidpartyholder:SetSize(config.width*5+8, config.height)
+		hgrowth = "LEFT"
+		vgrowth = "BOTTOM"
+		if (config.new_player_reverse) then hgrowth = "RIGHT" end
+		
+	elseif (config.group_growth == "Downwards") then
+		raidpartyholder:SetSize(config.width*5+8, config.height)
+		hgrowth = "LEFT"
+		vgrowth = "TOP"
+		if (config.new_player_reverse) then hgrowth = "RIGHT" end
+	end
+	frameHeader:SetPoint(vgrowth..hgrowth, raidpartyholder, vgrowth..hgrowth, 0, 0)
+end
+
+function enable(self)
+	self:SetActiveStyle("bdGrid")
+	
+	grid:buildAttributes()
+	
+	frameHeader = self:SpawnHeader(nil, nil, 'raid,party,solo',
+		"showParty", true,
+		"showPlayer", true,
+		"showSolo", config.showsolo,
+		"showRaid", true,
+		"initial-scale", 1,
+		"unitsPerColumn", 5,
+		"columnSpacing", 2,
+		"xOffset", xOffset,
+		"maxColumns",config.num_groups,
+		"groupingOrder",group_sort,
+		"sortMethod",sort_method,
+		"columnAnchorPoint",new_group_anchor,
+		"initial-width",config.width,
+		"initial-height",config.height,
+		"point",new_player_anchor,
+		"yOffset",yOffset,
+		"groupBy",group_by
+	);
+	
+	grid:resizeRaidHolder()
+end
+
+function grid:callback()
+	for k, frame in pairs(grid.frames) do
+		grid:frameSize(frame)
+	end
+end
+
+grid.frames = {}
+oUF:RegisterStyle("bdGrid", grid.layout)
+oUF:Factory(enable)
+
+function grid:refresh()
+	if (InCombatLockdown()) then return end
+	
+	grid:buildAttributes()
+	grid:resizeRaidHolder()
+	
+	for k, frame in pairs(grid.frames) do
+		frame:ClearAllPoints()
 	end
 	
 	-- growth/spacing
@@ -572,17 +627,9 @@ function grid:refresh()
 	
 	-- when to show
 	frameHeader:SetAttribute("showSolo",config.showsolo)
+	frameHeader:SetAttribute("maxColumns", num_groups)
 	
-	local difficultySize = {[3] = 1, [4] = 25, [5] = 10, [6] = 25, [7] = 25, [9] = 40, [14] = 30, [15] = 30, [16] = 20, [17] = 30, [18] = 40, [20] = 25}
-	
-	-- group limit
-	frameHeader:SetAttribute("maxColumns", config.num_groups) -- default min
-	if (config.intel_groups) then
-		local difficulty = select(3, GetInstanceInfo()) -- maybe use maxPlayers instead?
-		if (difficultySize[difficulty]) then
-			frameHeader:SetAttribute("maxColumns", (difficultySize[difficulty] / 5) )
-		end
-	end
+	-- width/height
 	frameHeader:SetAttribute("initial-width",config.width)
 	frameHeader:SetAttribute("initial-height",config.height)
 	
@@ -590,36 +637,6 @@ function grid:refresh()
 	frameHeader:SetAttribute("groupBy",group_by)
 	frameHeader:SetAttribute("groupingOrder",group_sort)
 	frameHeader:SetAttribute("sortMethod",sort_method)
-	
-	-- move the container to the mover, set up for growth directions
-	frameHeader:ClearAllPoints();
-	if (config.group_growth = "Right") then
-		raidpartyholder:SetSize(config.width, config.height*5+8)
-		hgrowth = "LEFT"
-		vgrowth = "TOP"
-		if (config.new_player_reverse) then vgrowth = "BOTTOM" end
-		
-	elseif (config.group_growth = "Left") then
-		raidpartyholder:SetSize(config.width, config.height*5+8)
-		hgrowth = "RIGHT"
-		vgrowth = "TOP"
-		if (config.new_player_reverse) then vgrowth = "BOTTOM" end
-		
-	elseif (config.group_growth = "Upwards") then
-		raidpartyholder:SetSize(config.width*5+8, config.height)
-		hgrowth = "LEFT"
-		vgrowth = "BOTTOM"
-		if (config.new_player_reverse) then hgrowth = "RIGHT" end
-		
-	elseif (config.group_growth = "Downwards") then
-		raidpartyholder:SetSize(config.width*5+8, config.height)
-		hgrowth = "LEFT"
-		vgrowth = "TOP"
-		if (config.new_player_reverse) then hgrowth = "RIGHT" end
-		
-	end
-	frameHeader:SetPoint(vgrowth..hgrowth, raidpartyholder, vgrowth..hgrowth, 0, 0)
-
 end
 
 grid:RegisterEvent("PLAYER_REGEN_ENABLED")
