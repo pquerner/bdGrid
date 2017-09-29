@@ -117,6 +117,8 @@ end
 bdCore:addModule("Grid", defaults)
 local config = bdCore.config.profile['Grid']
 
+
+
 -- make sizes outside of combat
 function grid:frameSize(frame)
 	if (InCombatLockdown()) then return end
