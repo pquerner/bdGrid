@@ -152,7 +152,7 @@ function grid:frameSize(frame)
 	frame.RaidTargetIndicator:SetSize(12, 12)
 	frame.Short:SetWidth(config.width)
 	frame.ReadyCheckIndicator:SetSize(12, 12)
-	frame.ResurrectIcon:SetSize(16, 16)
+	frame.ResurrectIndicator:SetSize(16, 16)
 	frame.ThreatIndicator:SetSize(60, 50)
 	frame.Buffs:SetSize(64, 16)
 	frame.Debuffs:SetSize(44, 22)
@@ -171,7 +171,7 @@ function grid:frameSize(frame)
 	end
 
 	if (not config.roleicon) then
-		frame.LFDRole:Hide()
+		frame.GroupRoleIndicator:Hide()
 	end
 
 	bdCore:triggerEvent("bd_updateTags")
@@ -325,16 +325,16 @@ function grid.layout(self, unit)
 	self.RaidTargetIndicator:SetPoint("TOP", self, "TOP", 0, -2)
 	
 	-- roll icon
-	self.LFDRole = self.Health:CreateTexture(nil, "OVERLAY")
-	self.LFDRole:SetSize(12, 12)
-	self.LFDRole:SetPoint("BOTTOMLEFT", self.Health, "BOTTOMLEFT",2,2)
-	self.LFDRole.Override = function(self,event)
+	self.GroupRoleIndicator = self.Health:CreateTexture(nil, "OVERLAY")
+	self.GroupRoleIndicator:SetSize(12, 12)
+	self.GroupRoleIndicator:SetPoint("BOTTOMLEFT", self.Health, "BOTTOMLEFT",2,2)
+	self.GroupRoleIndicator.Override = function(self,event)
 		local role = UnitGroupRolesAssigned(self.unit)
-		self.LFDRole:Hide()
+		self.GroupRoleIndicator:Hide()
 		if (config.roleicon) then
 			if (role and (role == "HEALER" or role == "TANK")) then
-				self.LFDRole:SetTexCoord(GetTexCoordsForRoleSmallCircle(role))
-				self.LFDRole:Show()
+				self.GroupRoleIndicator:SetTexCoord(GetTexCoordsForRoleSmallCircle(role))
+				self.GroupRoleIndicator:Show()
 			end
 		end
 		
@@ -361,8 +361,8 @@ function grid.layout(self, unit)
 	self.ReadyCheckIndicator:SetPoint('BOTTOM', self, 'BOTTOM', 0, 2)
 	
 	-- ResurrectIcon
-	self.ResurrectIcon = self.Health:CreateTexture(nil, 'OVERLAY')
-	self.ResurrectIcon:SetPoint('CENTER', self, "CENTER", 0,0)
+	self.ResurrectIndicator = self.Health:CreateTexture(nil, 'OVERLAY')
+	self.ResurrectIndicator:SetPoint('CENTER', self, "CENTER", 0,0)
 	
 	-- Threat
 	self.ThreatIndicator = CreateFrame('frame', nil, self)
