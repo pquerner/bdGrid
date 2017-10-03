@@ -1,6 +1,14 @@
 local oUF = bdCore.oUF
 local grid = CreateFrame("frame", nil, UIParent)
 
+
+-- upcoming features
+-- fully custom sorting, custom player positions
+-- bouqets / positioning
+-- specific spell positioning
+-- [buffs] [debuffs] [raid cooldowns] [my casts] [personals]
+-- [name] [status] [raid target] [readycheck]
+
 local defaults = {}
 
 defaults[#defaults+1] = {tab = {
