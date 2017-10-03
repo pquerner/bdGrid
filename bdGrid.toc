@@ -1,4 +1,4 @@
-## Interface: 72500
+## Interface: 70300
 ## Title: |cffA02C2Fbd|rGrid
 ## Version: @project-version@
 ## DefaultState: Enabled

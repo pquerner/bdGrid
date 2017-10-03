@@ -116,26 +116,52 @@ defaults[#defaults+1] = {group_sort = {
 	callback = function() grid:refresh() end
 }}
 
+defaults[#defaults+1] = {tab = {
+	type = "tab",
+	value = "Names"
+}}
+defaults[#defaults+1] = {namewidth = {
+	type = "slider",
+	value = 4,
+	min = 0,
+	max = 8,
+	step = 1,
+	label = "Truncate names to: ",
+	tooltip = "Longer names will be trucated to this size",
+	callback = function() grid:callback() end
+}}
+defaults[#defaults+1] = {text = {
+	type = "text",
+	value = "You can add or remove a nickname to a player by right clicking their name and clicking 'Add player alias'",
+}}
+
 -- if another bdAddon hasn't added auras to config, add them here
 if (not bdCore.modules["Auras"]) then
-	bdCore:addModule("Auras", bdCore.auraconfig)
+	bdCore:addModule("Auras", bdCore.auraconfig, true)
 end
 
 
-local config = bdCore:addModule("Grid", defaults)
---local config = bdCore.config["Grid"]
+bdCore:addModule("Grid", defaults)
+local config = bdCore.config.profile['Grid']
+
+if (not bdCore.config.persistent.GridAliases) then
+	bdCore.config.persistent.GridAliases = {}
+end
 
 -- make sizes outside of combat
 function grid:frameSize(frame)
 	if (InCombatLockdown()) then return end
+
+	config = bdCore.config.profile['Grid']
+
 	frame:SetSize(config.width, config.height)
 	--frame.Health:SetSize(config.width, config.height)
 	frame.Debuffs:SetSize(44, 22)
-	frame.RaidIcon:SetSize(12, 12)
+	frame.RaidTargetIndicator:SetSize(12, 12)
 	frame.Short:SetWidth(config.width)
-	frame.ReadyCheck:SetSize(12, 12)
-	frame.ResurrectIcon:SetSize(16, 16)
-	frame.Threat:SetSize(60, 50)
+	frame.ReadyCheckIndicator:SetSize(12, 12)
+	frame.ResurrectIndicator:SetSize(16, 16)
+	frame.ThreatIndicator:SetSize(60, 50)
 	frame.Buffs:SetSize(64, 16)
 	frame.Debuffs:SetSize(44, 22)
 	frame.Dispel:SetSize(60, 50)
@@ -153,8 +179,10 @@ function grid:frameSize(frame)
 	end
 
 	if (not config.roleicon) then
-		frame.LFDRole:Hide()
+		frame.GroupRoleIndicator:Hide()
 	end
+
+	bdCore:triggerEvent("bd_updateTags")
 end
 
 -- Load 
@@ -265,15 +293,22 @@ function grid.layout(self, unit)
 	self.Short:SetPoint("BOTTOMRIGHT", self.nameAnchor, "BOTTOMRIGHT", 0,0)
 	self.Short:SetJustifyH("RIGHT")
 	
-	oUF.Tags.Events["self.Short"] = "UNIT_NAME_UPDATE"
+	oUF.Tags.Events["self.Short"] = "UNIT_NAME_UPDATE BAG_CLOSED"
 	oUF.Tags.Methods["self.Short"] = function(unit)
 		local name = UnitName(unit)
-		--local class, classFileName = UnitClass(unit)
-		return string.sub(name,1,4)
+		if (not name) then return end
+		if (bdCore.config.persistent.GridAliases[name]) then
+			name = bdCore.config.persistent.GridAliases[name];
+		end
+		return string.sub(name, 1, config.namewidth)
 	end
 
 	self:Tag(self.Short, '[self.Short]')
 	self:Tag(self.Status, '[status]')
+
+	bdCore:hookEvent("bd_updateTags", function()
+		self.Short:UpdateTag()
+	end)
 	
 	-- Range
 	self:SetScript("OnEnter", function()
@@ -293,21 +328,21 @@ function grid.layout(self, unit)
 
 	
 	-- Raid Icon
-	self.RaidIcon = self.Health:CreateTexture(nil, "OVERLAY", nil, 1)
-	self.RaidIcon:SetSize(12, 12)
-	self.RaidIcon:SetPoint("TOP", self, "TOP", 0, -2)
+	self.RaidTargetIndicator = self.Health:CreateTexture(nil, "OVERLAY", nil, 1)
+	self.RaidTargetIndicator:SetSize(12, 12)
+	self.RaidTargetIndicator:SetPoint("TOP", self, "TOP", 0, -2)
 	
 	-- roll icon
-	self.LFDRole = self.Health:CreateTexture(nil, "OVERLAY")
-	self.LFDRole:SetSize(12, 12)
-	self.LFDRole:SetPoint("BOTTOMLEFT", self.Health, "BOTTOMLEFT",2,2)
-	self.LFDRole.Override = function(self,event)
+	self.GroupRoleIndicator = self.Health:CreateTexture(nil, "OVERLAY")
+	self.GroupRoleIndicator:SetSize(12, 12)
+	self.GroupRoleIndicator:SetPoint("BOTTOMLEFT", self.Health, "BOTTOMLEFT",2,2)
+	self.GroupRoleIndicator.Override = function(self,event)
 		local role = UnitGroupRolesAssigned(self.unit)
-		self.LFDRole:Hide()
+		self.GroupRoleIndicator:Hide()
 		if (config.roleicon) then
 			if (role and (role == "HEALER" or role == "TANK")) then
-				self.LFDRole:SetTexCoord(GetTexCoordsForRoleSmallCircle(role))
-				self.LFDRole:Show()
+				self.GroupRoleIndicator:SetTexCoord(GetTexCoordsForRoleSmallCircle(role))
+				self.GroupRoleIndicator:Show()
 			end
 		end
 		
@@ -330,22 +365,22 @@ function grid.layout(self, unit)
 	self.Range = range
 	
 	-- Readycheck
-	self.ReadyCheck = self.Health:CreateTexture(nil, 'OVERLAY', nil, 7)
-	self.ReadyCheck:SetPoint('BOTTOM', self, 'BOTTOM', 0, 2)
+	self.ReadyCheckIndicator = self.Health:CreateTexture(nil, 'OVERLAY', nil, 7)
+	self.ReadyCheckIndicator:SetPoint('BOTTOM', self, 'BOTTOM', 0, 2)
 	
 	-- ResurrectIcon
-	self.ResurrectIcon = self.Health:CreateTexture(nil, 'OVERLAY')
-	self.ResurrectIcon:SetPoint('CENTER', self, "CENTER", 0,0)
+	self.ResurrectIndicator = self.Health:CreateTexture(nil, 'OVERLAY')
+	self.ResurrectIndicator:SetPoint('CENTER', self, "CENTER", 0,0)
 	
 	-- Threat
-	self.Threat = CreateFrame('frame', nil, self)
-	self.Threat:SetFrameLevel(95)
-	self.Threat:SetPoint('TOPRIGHT', self, "TOPRIGHT", 1, 1)
-	self.Threat:SetPoint('BOTTOMLEFT', self, "BOTTOMLEFT", -1, -1)
-	self.Threat:SetBackdrop({bgFile = bdCore.media.flat, edgeFile = bdCore.media.flat, edgeSize = 1})
-	self.Threat:SetBackdropBorderColor(1, 0, 0,1)
-	self.Threat:SetBackdropColor(0,0,0,0)
-	self.Threat.SetVertexColor = function() return end
+	self.ThreatIndicator = CreateFrame('frame', nil, self)
+	self.ThreatIndicator:SetFrameLevel(95)
+	self.ThreatIndicator:SetPoint('TOPRIGHT', self, "TOPRIGHT", 1, 1)
+	self.ThreatIndicator:SetPoint('BOTTOMLEFT', self, "BOTTOMLEFT", -1, -1)
+	self.ThreatIndicator:SetBackdrop({bgFile = bdCore.media.flat, edgeFile = bdCore.media.flat, edgeSize = 1})
+	self.ThreatIndicator:SetBackdropBorderColor(1, 0, 0,1)
+	self.ThreatIndicator:SetBackdropColor(0,0,0,0)
+	self.ThreatIndicator.SetVertexColor = function() return end
 	
 	-- Buffs
 	self.Buffs = CreateFrame("Frame", nil, self.Health)
@@ -649,10 +684,114 @@ end
 
 grid:RegisterEvent("PLAYER_REGEN_ENABLED")
 grid:RegisterEvent("PLAYER_ENTERING_WORLD")
+bdCore:hookEvent("bd_reconfig",function() 
+	grid:callback()
+	grid:refresh()
+end)
 grid:SetScript("OnEvent", function(self, event, arg1)
 	grid:callback()
 	grid:refresh()
 end)
+
+-- player alias functionality
+
+local function aliasPrompt(playerName)
+	StaticPopupDialogs["BDGRID_ALIAS"] = {
+		text = "Set alias for "..playerName,
+		button1 = "Accept",
+		button2 = "Cancel",
+		timeout = 0,
+		whileDead = 1,
+		hideOnEscape = 1,
+		OnCancel = function (self, data)
+			self:Hide()
+		end,
+		OnShow = function (self, data)
+			local parent = self
+			if (bdCore.config.persistent.GridAliases[playerName]) then
+				self.editBox:SetText(bdCore.config.persistent.GridAliases[playerName])
+			else
+				self.editBox:SetText("")
+			end
+			self.editBox:SetScript("OnEscapePressed", function(self) parent:Hide() end)
+			self.editBox:SetScript("OnEnterPressed", function(self) parent.button1:Click() end)
+		end,
+		OnAccept = function (self, data, data2)
+			local text = self.editBox:GetText()
+			if (text == "") then
+				bdCore.config.persistent.GridAliases[playerName] = nil
+			else
+				bdCore.config.persistent.GridAliases[playerName] = text
+			end
+			self:Hide()
+
+			bdCore:triggerEvent("bd_updateTags")
+		end,
+		OnHide = function (self) 
+			self.data = nil; 
+			self:Hide() 
+		end,
+		hasEditBox = true,
+		enterClicksFirstButton = true,
+		preferredIndex = 3,  -- avoid some UI taint, see http://www.wowace.com/announcements/how-to-avoid-some-ui-taint/
+	}
+	StaticPopup_Show("BDGRID_ALIAS")
+end
+-- turns out its not at all simpel to add a button where you want in an already-existing dropdown. that or i'm dumb
+hooksecurefunc("ToggleDropDownMenu", function(level, value, dropDownFrame, anchorName, xOffset, yOffset, menuList, button, autoHideDelay) 
+	if (level == 1 and not button) then
+		local name = _G['DropDownList1Button1NormalText']
+		local focus = _G['DropDownList1Button3NormalText']
+
+		-- only add a button if this is a unitmenu
+		if (focus and focus:GetText() == "Set Focus") then
+			name = name:GetText()
+			if (name and (UnitInRaid(name) or UnitInParty(name) or UnitIsUnit(name, "player"))) then
+				-- add our button
+				local info = UIDropDownMenu_CreateInfo()
+				info.text = "Add player alias"
+				info.notCheckable = true;
+				info.func = function()
+					aliasPrompt(name)
+				end
+				UIDropDownMenu_AddButton(info)
+
+				-- loop through all, reposition
+				local gap = nil
+				local lasty = nil
+				local idealy = nil
+				for i = 1, 30 do
+					local item = _G['DropDownList1Button'..i]
+					if (not item) then return end
+					local point, anchor, anchorpoint, x, y = item:GetPoint()
+					-- calculate how large the menu is
+					if (not gap) then
+						if (not lasty) then
+							lasty = y
+						else
+							gap = y - lasty
+						end
+					else
+						local text = _G['DropDownList1Button'..i.."NormalText"]:GetText()
+						if (i >= 5) then
+							-- find out what y axis the new button is taking over
+							if (i == 5) then
+								idealy = y
+							end
+							
+							-- send everyting down by gap
+							item:SetPoint(point, anchor, anchorpoint, x, y+gap)
+
+							if (text == "Add player alias") then
+								item:SetPoint(point, anchor, anchorpoint, x, idealy)
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+end);
 
 -- disable blizzard raid frames
 CompactRaidFrameManager:UnregisterAllEvents() 
