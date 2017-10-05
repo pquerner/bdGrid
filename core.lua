@@ -23,23 +23,6 @@ defaults[#defaults+1] = {powerdisplay = {
 	tooltip = "Show mana/energy/rage bars on frames.",
 	callback = function() bdCore:triggerEvent("bdGrid_update") end
 }}
-defaults[#defaults+1] = {num_groups = {
-	type = "slider",
-	value = 4,
-	min = 1,
-	max = 8,
-	step = 1,
-	label = "Default number of Groups",
-	tooltip = "How many groups should be shown at a time",
-	callback = function() grid:refresh() end
-}}
-defaults[#defaults+1] = {intel_groups = {
-	type = "checkbox",
-	value = true,
-	label = "Automatically set group size.",
-	tooltip = "When in LFR, show 5 groups, mythic show 4, etc.",
-	callback = function() grid:refresh() end
-}}
 defaults[#defaults+1] = {width = {
 	type = "slider",
 	value = 60,
@@ -81,16 +64,53 @@ defaults[#defaults+1] = {roleicon = {
 	tooltip = "Will only show icon for tanks/healers (only in groups)",
 	callback = function() grid:callback() end
 }}
+defaults[#defaults+1] = {inrangealpha = {
+	type = "slider",
+	value = 1,
+	min = 0.1,
+	max = 1,
+	step = 0.1,
+	label = "In Range Alpha",
+	tooltip = "The transparency of a player who's in range",
+	callback = function() grid:callback() end
+}}
+defaults[#defaults+1] = {outofrangealpha = {
+	type = "slider",
+	value = 0.4,
+	min = 0,
+	max = 1,
+	step = 0.1,
+	label = "Out of Range Alpha",
+	tooltip = "The transparency of a player who's out of range",
+	callback = function() grid:callback() end
+}}
+
+defaults[#defaults+1] = {tab = {
+	type = "tab",
+	value = "Growth & Grouping"
+}}
 defaults[#defaults+1] = {showsolo = {
 	type = "checkbox",
 	value = true,
 	label = "Show raid frames when solo",
 	callback = function() grid:refresh() end
 }}
-
-defaults[#defaults+1] = {tab = {
-	type = "tab",
-	value = "Growth & Grouping"
+defaults[#defaults+1] = {num_groups = {
+	type = "slider",
+	value = 4,
+	min = 1,
+	max = 8,
+	step = 1,
+	label = "Default number of Groups",
+	tooltip = "How many groups should be shown at a time",
+	callback = function() grid:refresh() end
+}}
+defaults[#defaults+1] = {intel_groups = {
+	type = "checkbox",
+	value = true,
+	label = "Automatically set group size.",
+	tooltip = "When in LFR, show 5 groups, mythic show 4, etc.",
+	callback = function() grid:refresh() end
 }}
 defaults[#defaults+1] = {group_growth = {
 	type = "dropdown",
@@ -156,19 +176,21 @@ function grid:frameSize(frame)
 
 	frame:SetSize(config.width, config.height)
 	--frame.Health:SetSize(config.width, config.height)
-	frame.Debuffs:SetSize(44, 22)
 	frame.RaidTargetIndicator:SetSize(12, 12)
-	frame.Short:SetWidth(config.width)
 	frame.ReadyCheckIndicator:SetSize(12, 12)
 	frame.ResurrectIndicator:SetSize(16, 16)
 	frame.ThreatIndicator:SetSize(60, 50)
-	frame.Buffs:SetSize(64, 16)
-	frame.Debuffs:SetSize(44, 22)
 	frame.Dispel:SetSize(60, 50)
+	
+	frame.Short:SetWidth(config.width)
+
 	frame.Buffs:SetPoint("TOPLEFT", frame.Health, "TOPLEFT")
-	frame.Debuffs:SetPoint("CENTER", frame.Health, "CENTER")
 	frame.Buffs:SetFrameLevel(27)
+	frame.Buffs:SetSize(64, 16)
+
+	frame.Debuffs:SetPoint("CENTER", frame.Health, "CENTER")
 	frame.Debuffs:SetFrameLevel(27)
+	frame.Debuffs:SetSize(44, 22)
 	
 	if (config.powerdisplay == "None") then
 		frame.Power:Hide()
@@ -177,6 +199,11 @@ function grid:frameSize(frame)
 	elseif (config.powerdisplay == "All") then
 		frame.Power:Show()
 	end
+
+	frame.Range = {
+		insideAlpha = config.inrangealpha,
+		outsideAlpha = config.outofrangealpha,
+	}
 
 	if (not config.roleicon) then
 		frame.GroupRoleIndicator:Hide()
@@ -356,13 +383,10 @@ function grid.layout(self, unit)
 		end
 	end
 	
-	-- range/pointer arrow
-	local range = {
-		insideAlpha = 1,
-		outsideAlpha = .4,
+	self.Range = {
+		insideAlpha = config.inrangealpha,
+		outsideAlpha = config.outofrangealpha,
 	}
-	--self.freebRange = range
-	self.Range = range
 	
 	-- Readycheck
 	self.ReadyCheckIndicator = self.Health:CreateTexture(nil, 'OVERLAY', nil, 7)
