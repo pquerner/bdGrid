@@ -175,22 +175,22 @@ function grid:frameSize(frame)
 	config = bdCore.config.profile['Grid']
 
 	frame:SetSize(config.width, config.height)
-	--frame.Health:SetSize(config.width, config.height)
-	frame.RaidTargetIndicator:SetSize(12, 12)
+
+	--[[frame.RaidTargetIndicator:SetSize(12, 12)
 	frame.ReadyCheckIndicator:SetSize(12, 12)
 	frame.ResurrectIndicator:SetSize(16, 16)
 	frame.ThreatIndicator:SetSize(60, 50)
-	frame.Dispel:SetSize(60, 50)
+	frame.Dispel:SetSize(60, 50)--]]
 	
-	frame.Short:SetWidth(config.width)
+	--frame.Short:SetWidth(config.width)
 
-	frame.Buffs:SetPoint("TOPLEFT", frame.Health, "TOPLEFT")
+	--[[frame.Buffs:SetPoint("TOPLEFT", frame.Health, "TOPLEFT")
 	frame.Buffs:SetFrameLevel(27)
-	frame.Buffs:SetSize(64, 16)
+	frame.Buffs:SetSize(64, 16)--]]
 
-	frame.Debuffs:SetPoint("CENTER", frame.Health, "CENTER")
-	frame.Debuffs:SetFrameLevel(27)
-	frame.Debuffs:SetSize(44, 22)
+	--frame.Debuffs:SetPoint("CENTER", frame.Health, "CENTER")
+	--frame.Debuffs:SetFrameLevel(27)
+	--frame.Debuffs:SetSize(44, 22)
 	
 	if (config.powerdisplay == "None") then
 		frame.Power:Hide()
@@ -254,18 +254,16 @@ function grid.layout(self, unit)
 			self.Health:SetStatusBarColor(unpack(bdCore.media.backdrop))
 			self.Health.background:SetVertexColor(r/2, g/2, b/2)
 			self.Short:SetTextColor(r*1.1, g*1.1, b*1.1)
-			--self.TotalAbsorb:SetStatusBarColor(1,1,1,.07)
 		else
 			self.Health:SetStatusBarColor(r/2, g/2, b/2)
 			self.Health.background:SetVertexColor(unpack(bdCore.media.backdrop))
 			self.Short:SetTextColor(1,1,1)
-			--self.TotalAbsorb:SetStatusBarColor(.1,.1,.1,.5)
 		end
 	end
 	
 	-- Tags
 	-- Status (offline/dead)
-	self.Status = self.Health:CreateFontString(nil)
+	self.Status = self:CreateFontString(nil)
 	self.Status:SetFont(bdCore.media.font, 12, "OUTLINE")
 	self.Status:SetPoint('BOTTOMLEFT', self, "BOTTOMLEFT", 0, 0)
 	oUF.Tags.Events["status"] = "UNIT_HEALTH  UNIT_CONNECTION"
@@ -278,26 +276,54 @@ function grid.layout(self, unit)
 			return "ghost"
 		end
 	end
+	self:Tag(self.Status, '[status]')
+
+	-- shortname
+	--[[self.nameAnchor = CreateFrame("frame",nil, self.) -- because frame level is acting bizare as hell
+	self.nameAnchor:SetPoint("BOTTOMRIGHT", self.Health, "BOTTOMRIGHT", -1, 1)
+	self.nameAnchor:SetPoint("TOPLEFT", self.Health, "BOTTOMLEFT", 1, 20)
+	self.nameAnchor:SetFrameLevel(6)--]]
+	self.Short = self:CreateFontString(nil,"OVERLAY")
+	self.Short:SetFont(bdCore.media.font, 13)
+	self.Short:SetShadowOffset(1,-1)
+	self.Short:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", 0, 0)
+	self.Short:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", 0, 0)
+	self.Short:SetJustifyH("RIGHT")
+	
+	oUF.Tags.Events["self.Short"] = "UNIT_NAME_UPDATE"
+	oUF.Tags.Methods["self.Short"] = function(unit)
+		local name = UnitName(unit)
+		if (not name) then return end
+		if (bdCore.config.persistent.GridAliases[name]) then
+			name = bdCore.config.persistent.GridAliases[name];
+		end
+		return string.sub(name, 1, config.namewidth)
+	end
+
+	bdCore:hookEvent("bd_updateTags", function()
+		self.Short:UpdateTag()
+	end)
+	self:Tag(self.Short, '[self.Short]')
 	
 	
 	-- Absorb
-	self.TotalAbsorb = CreateFrame('StatusBar', nil, self.Health)
+	self.TotalAbsorb = CreateFrame('StatusBar', nil, self)
 	self.TotalAbsorb:SetAllPoints(self.Health)
 	self.TotalAbsorb:SetStatusBarTexture(bdCore.media.flat)
 	self.TotalAbsorb:SetStatusBarColor(.1,.1,.1,.6)
 	
-	self.HealAbsorb = CreateFrame('StatusBar', nil, self.Health)
+	self.HealAbsorb = CreateFrame('StatusBar', nil, self)
 	self.HealAbsorb:SetAllPoints(self.Health)
 	self.HealAbsorb:SetStatusBarTexture(bdCore.media.flat)
 	self.HealAbsorb:SetStatusBarColor(.2,0,0,.5)
 	
-	self.HealPredict = CreateFrame('StatusBar', nil, self.Health)
+	self.HealPredict = CreateFrame('StatusBar', nil, self)
 	self.HealPredict:SetAllPoints(self.Health)
 	self.HealPredict:SetStatusBarTexture(bdCore.media.flat)
 	self.HealPredict:SetStatusBarColor(0.6,1,0.6,.2)
 	
 	-- Power
-	self.Power = CreateFrame("StatusBar", nil, self.Health)
+	self.Power = CreateFrame("StatusBar", nil, self)
 	self.Power:SetStatusBarTexture(bdCore.media.flat)
 	self.Power:ClearAllPoints()
 	self.Power:SetPoint("BOTTOMLEFT", self.Health, "BOTTOMLEFT", 0, 0)
@@ -309,58 +335,23 @@ function grid.layout(self, unit)
 	self.Power.border:SetPoint("TOPRIGHT", self.Power, "TOPRIGHT", 0, 2)
 	self.Power.border:SetPoint("BOTTOMLEFT", self.Power, "TOPLEFT", 0, 0)
 	
-	-- shortname
-	self.nameAnchor = CreateFrame("frame",nil, self.Health) -- because frame level is acting bizare as hell
-	self.nameAnchor:SetPoint("BOTTOMRIGHT", self.Health, "BOTTOMRIGHT", -1, 1)
-	self.nameAnchor:SetPoint("TOPLEFT", self.Health, "BOTTOMLEFT", 1, 20)
-	self.nameAnchor:SetFrameLevel(6)
-	self.Short = self.nameAnchor:CreateFontString(nil,"OVERLAY")
-	self.Short:SetFont(bdCore.media.font, 13)
-	self.Short:SetShadowOffset(1,-1)
-	self.Short:SetPoint("BOTTOMRIGHT", self.nameAnchor, "BOTTOMRIGHT", 0,0)
-	self.Short:SetJustifyH("RIGHT")
-	
-	oUF.Tags.Events["self.Short"] = "UNIT_NAME_UPDATE BAG_CLOSED"
-	oUF.Tags.Methods["self.Short"] = function(unit)
-		local name = UnitName(unit)
-		if (not name) then return end
-		if (bdCore.config.persistent.GridAliases[name]) then
-			name = bdCore.config.persistent.GridAliases[name];
-		end
-		return string.sub(name, 1, config.namewidth)
-	end
-
-	self:Tag(self.Short, '[self.Short]')
-	self:Tag(self.Status, '[status]')
-
-	bdCore:hookEvent("bd_updateTags", function()
-		self.Short:UpdateTag()
-	end)
-	
 	-- Range
 	self:SetScript("OnEnter", function()
-		--[[self.arrowmouseover = true
-		if (not self.OoR) then
-			bdCore:arrow(self, self.unit)
-		end--]]
 		if (not config.hidetooltips) then
 			UnitFrame_OnEnter(self)
 		end
 	end)
 	self:SetScript("OnLeave", function()
-		--self.freebarrow:Hide()
-		--self.arrowmouseover = false
 		UnitFrame_OnLeave(self)
 	end)
 
-	
 	-- Raid Icon
-	self.RaidTargetIndicator = self.Health:CreateTexture(nil, "OVERLAY", nil, 1)
+	self.RaidTargetIndicator = self:CreateTexture(nil, "OVERLAY", nil, 1)
 	self.RaidTargetIndicator:SetSize(12, 12)
 	self.RaidTargetIndicator:SetPoint("TOP", self, "TOP", 0, -2)
 	
 	-- roll icon
-	self.GroupRoleIndicator = self.Health:CreateTexture(nil, "OVERLAY")
+	self.GroupRoleIndicator = self:CreateTexture(nil, "OVERLAY")
 	self.GroupRoleIndicator:SetSize(12, 12)
 	self.GroupRoleIndicator:SetPoint("BOTTOMLEFT", self.Health, "BOTTOMLEFT",2,2)
 	self.GroupRoleIndicator.Override = function(self,event)
@@ -389,11 +380,11 @@ function grid.layout(self, unit)
 	}
 	
 	-- Readycheck
-	self.ReadyCheckIndicator = self.Health:CreateTexture(nil, 'OVERLAY', nil, 7)
+	self.ReadyCheckIndicator = self:CreateTexture(nil, 'OVERLAY', nil, 7)
 	self.ReadyCheckIndicator:SetPoint('BOTTOM', self, 'BOTTOM', 0, 2)
 	
 	-- ResurrectIcon
-	self.ResurrectIndicator = self.Health:CreateTexture(nil, 'OVERLAY')
+	self.ResurrectIndicator = self:CreateTexture(nil, 'OVERLAY')
 	self.ResurrectIndicator:SetPoint('CENTER', self, "CENTER", 0,0)
 	
 	-- Threat
@@ -407,16 +398,16 @@ function grid.layout(self, unit)
 	self.ThreatIndicator.SetVertexColor = function() return end
 	
 	-- Buffs
-	self.Buffs = CreateFrame("Frame", nil, self.Health)
-	self.Buffs:SetPoint("TOPLEFT", self.Health, "TOPLEFT")
+	self.Buffs = CreateFrame("Frame", nil, self)
+	self.Buffs:SetAllPoints(self.Health)
 	self.Buffs:SetFrameLevel(21)
-	
 	self.Buffs:EnableMouse(false)
 	self.Buffs.initialAnchor  = "TOPLEFT"
+
 	self.Buffs.size = 14
 	self.Buffs.spacing = 1
 	self.Buffs.num = 4
-	self.Buffs.onlyShowPlayer = true
+
 	self.Buffs['growth-y'] = "DOWN"
 	self.Buffs['growth-x'] = "RIGHT"
 
@@ -432,7 +423,7 @@ function grid.layout(self, unit)
 	end
 	
 	-- Dispells
-	self.Dispel = CreateFrame('frame', nil, self.Health)
+	self.Dispel = CreateFrame('frame', nil, self)
 	self.Dispel:SetFrameLevel(100)
 	self.Dispel:SetPoint('TOPRIGHT', self, "TOPRIGHT", 1, 1)
 	self.Dispel:SetPoint('BOTTOMLEFT', self, "BOTTOMLEFT", -1, -1)
@@ -486,17 +477,16 @@ function grid.layout(self, unit)
 	end)
 	
 	-- Debuffs
-	self.Debuffs = CreateFrame("Frame", nil, self.Health)
+	self.Debuffs = CreateFrame("Frame", nil, self)
 	self.Debuffs:SetFrameLevel(21)
 	self.Debuffs:SetPoint("CENTER", self.Health, "CENTER")
-	
 	self.Debuffs.initialAnchor  = "CENTER"
 	self.Debuffs.size = 16
 	self.Debuffs.spacing = 1
 	self.Debuffs.num = 3
-	self.Debuffs.onlyShowPlayer = true
 	self.Debuffs['growth-y'] = "DOWN"
 	self.Debuffs['growth-x'] = "RIGHT"
+	self.Debuffs:SetSize(44, 22)
 
 	self.Debuffs.CustomFilter = function(icons, unit, icon, name, rank, texture, count, dispelType, duration, expiration, caster, isStealable, nameplateShowSelf, spellID, canApply, isBossDebuff, casterIsPlayer, nameplateShowAll,timeMod, effect1, effect2, effect3)
 		return bdCore:filterAura(name,caster)
@@ -717,8 +707,9 @@ grid:SetScript("OnEvent", function(self, event, arg1)
 	grid:refresh()
 end)
 
+-----------------------------------------------------
 -- player alias functionality
-
+-----------------------------------------------------
 local function aliasPrompt(playerName)
 	StaticPopupDialogs["BDGRID_ALIAS"] = {
 		text = "Set alias for "..playerName,
@@ -761,6 +752,7 @@ local function aliasPrompt(playerName)
 	}
 	StaticPopup_Show("BDGRID_ALIAS")
 end
+
 -- turns out its not at all simpel to add a button where you want in an already-existing dropdown. that or i'm dumb
 hooksecurefunc("ToggleDropDownMenu", function(level, value, dropDownFrame, anchorName, xOffset, yOffset, menuList, button, autoHideDelay) 
 	if (level == 1 and not button) then
