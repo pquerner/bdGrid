@@ -240,6 +240,7 @@ function grid.layout(self, unit)
 	self.Health = CreateFrame("StatusBar", nil, self)
 	self.Health:SetStatusBarTexture(bdCore.media.flat)
 	self.Health:SetAllPoints(self)
+	self.Health:SetFrameLevel(0)
 	self.Health.frequentUpdates = true
 	self.Health.colorTapping = true
 	self.Health.colorDisconnected = true
@@ -283,7 +284,7 @@ function grid.layout(self, unit)
 	self.nameAnchor:SetPoint("BOTTOMRIGHT", self.Health, "BOTTOMRIGHT", -1, 1)
 	self.nameAnchor:SetPoint("TOPLEFT", self.Health, "BOTTOMLEFT", 1, 20)
 	self.nameAnchor:SetFrameLevel(6)--]]
-	self.Short = self:CreateFontString(nil,"OVERLAY")
+	self.Short = self:CreateFontString(nil)
 	self.Short:SetFont(bdCore.media.font, 13)
 	self.Short:SetShadowOffset(1,-1)
 	self.Short:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", 0, 0)
