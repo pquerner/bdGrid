@@ -1,6 +1,11 @@
 local oUF = bdCore.oUF
 local grid = CreateFrame("frame", nil, UIParent)
+local lib_glow = bdButtonGlow
 
+local specialspells = {}
+specialspells['Sentence of Sargeras'] = true
+specialspells['Soulblight'] = true
+specialspells['Soulbomb'] = true
 
 -- upcoming features
 -- fully custom sorting, custom player positions
@@ -135,6 +140,21 @@ defaults[#defaults+1] = {group_sort = {
 	tooltip = "Method by which the groups should be formed.",
 	callback = function() grid:refresh() end
 }}
+
+defaults[#defaults+1] = {tab = {
+	type = "tab",
+	value = "Special Spells"
+}}
+defaults[#defaults+1] = {text = {
+	type = "text",
+	value = "Spells in the following list will create a 'Glow' animation around the frame when the unit has the bufff OR debuff.",
+}}
+defaults[#defaults+1] = {specialalerts = {
+	type = "list",
+	value = specialspells,
+	label = "Special Alerts",
+}}
+
 
 defaults[#defaults+1] = {tab = {
 	type = "tab",
@@ -296,7 +316,49 @@ function grid.layout(self, unit)
 	self.HealPredict:SetAllPoints(self.Health)
 	self.HealPredict:SetStatusBarTexture(bdCore.media.flat)
 	self.HealPredict:SetStatusBarColor(0.6,1,0.6,.2)
+
+	-- special spell alerts
+	self.Glow = CreateFrame("frame", "glow", self.Health)
+	self.Glow:SetAllPoints()
+	self.Glow:SetSize(config.width, config.height)
+	self.Glow:SetFrameLevel(3)
+	self:RegisterEvent("UNIT_AURA", function(self, event, unit)
+
+		if (unit == self.unit) then
+			local allow = false
+			for name, v in pairs(config.specialalerts) do
+				if (UnitAura(unit, name)) then
+					allow = true
+				end
+			end
+
+			if (allow) then
+				lib_glow.ShowOverlayGlow(self.Glow)
+			else
+				lib_glow.HideOverlayGlow(self.Glow)
+			end
+		end
+	end)
+	--[[self:SetScript("OnEvent", function(self, event, unit)
+		
+	end)--]]
+
+	-- glow indicator
+	--[[self.Glow = CreateFrame("frame", "bdGrid_Glow"..unit, self.Health, "AutoCastShineTemplate")
 	
+	--self.Health:CreateTexture(nil,"OVERLAY")
+	--self.Glow:SetTexture("Interface\\ItemSocketingFrame\\UI-ItemSockets.png")
+	--self.Glow:SetTexture(TEXTURE)
+	self.Glow:SetPoint("TOPLEFT", self.Health, "TOPLEFT", 2, -2)
+	self.Glow:SetPoint("BOTTOMRIGHT", self.Health, "BOTTOMRIGHT", -2, 2)
+	AutoCastShine_AutoCastStart(self.Glow);--]]
+	
+
+	-- Resurrect
+	self.ResurrectIndicator = self.Health:CreateTexture(nil, 'OVERLAY')
+	self.ResurrectIndicator:SetSize(16, 16)
+    self.ResurrectIndicator:SetPoint('TOPRIGHT', self)
+
 	-- Power
 	self.Power = CreateFrame("StatusBar", nil, self.Health)
 	self.Power:SetStatusBarTexture(bdCore.media.flat)
