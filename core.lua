@@ -149,12 +149,18 @@ defaults[#defaults+1] = {text = {
 	type = "text",
 	value = "Spells in the following list will create a 'Glow' animation around the frame when the unit has the bufff OR debuff.",
 }}
+defaults[#defaults+1] = {showspecialicons = {
+	type = "checkbox",
+	value = true,
+	label = "Show Special Spell icons by default",
+	callback = function() grid:refresh() end
+}}
+
 defaults[#defaults+1] = {specialalerts = {
 	type = "list",
 	value = specialspells,
 	label = "Special Alerts",
 }}
-
 
 defaults[#defaults+1] = {tab = {
 	type = "tab",
@@ -323,12 +329,12 @@ function grid.layout(self, unit)
 	self.Glow:SetSize(config.width, config.height)
 	self.Glow:SetFrameLevel(3)
 	self:RegisterEvent("UNIT_AURA", function(self, event, unit)
-
 		if (unit == self.unit) then
 			local allow = false
 			for name, v in pairs(config.specialalerts) do
-				if (UnitAura(unit, name)) then
+				if (UnitBuff(self.unit, name) or UnitDebuff(self.unit, name)) then
 					allow = true
+					break
 				end
 			end
 
@@ -484,6 +490,9 @@ function grid.layout(self, unit)
 	self.Buffs['growth-x'] = "RIGHT"
 
 	self.Buffs.CustomFilter = function(icons, unit, icon, name, rank, texture, count, dispelType, duration, expiration, caster, isStealable, nameplateShowSelf, spellID, canApply, isBossDebuff, casterIsPlayer, nameplateShowAll,timeMod, effect1, effect2, effect3)
+		if (config.showspecialicons) then
+			return config.specialalerts[name]
+		end
 		return bdCore:filterAura(name,caster)
 	end
 	self.Buffs.PostUpdateIcon = function(buffs, unit, button) 
@@ -562,6 +571,9 @@ function grid.layout(self, unit)
 	self.Debuffs['growth-x'] = "RIGHT"
 
 	self.Debuffs.CustomFilter = function(icons, unit, icon, name, rank, texture, count, dispelType, duration, expiration, caster, isStealable, nameplateShowSelf, spellID, canApply, isBossDebuff, casterIsPlayer, nameplateShowAll,timeMod, effect1, effect2, effect3)
+		if (config.showspecialicons) then
+			return config.specialalerts[name]
+		end
 		return bdCore:filterAura(name,caster)
 	end
 	self.Debuffs.PostUpdateIcon = function(buffs, unit, button)
