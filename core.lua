@@ -2,11 +2,6 @@ local oUF = bdCore.oUF
 local grid = CreateFrame("frame", nil, UIParent)
 local lib_glow = bdButtonGlow
 
-local specialspells = {}
-specialspells['Sentence of Sargeras'] = true
-specialspells['Soulblight'] = true
-specialspells['Soulbomb'] = true
-
 -- upcoming features
 -- fully custom sorting, custom player positions
 -- bouqets / positioning
@@ -180,6 +175,13 @@ defaults[#defaults+1] = {text = {
 	type = "text",
 	value = "You can add or remove a nickname to a player by right clicking their name and clicking 'Add player alias'",
 }}
+
+local specialspells = {}
+specialspells['Sentence of Sargeras'] = true
+specialspells['Soulblight'] = true
+specialspells['Soulbomb'] = true
+specialspells['Fulminating Pulse'] = true
+specialspells['Chilled Blood'] = true
 
 -- if another bdAddon hasn't added auras to config, add them here
 if (not bdCore.modules["Auras"]) then
