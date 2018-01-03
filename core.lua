@@ -330,6 +330,7 @@ function grid.layout(self, unit)
 	self.Glow:SetAllPoints()
 	self.Glow:SetSize(config.width, config.height)
 	self.Glow:SetFrameLevel(3)
+	
 	self:RegisterEvent("UNIT_AURA", function(self, event, unit)
 		if (unit == self.unit) then
 			local allow = false
@@ -492,7 +493,7 @@ function grid.layout(self, unit)
 	self.Buffs['growth-x'] = "RIGHT"
 
 	self.Buffs.CustomFilter = function(icons, unit, icon, name, rank, texture, count, dispelType, duration, expiration, caster, isStealable, nameplateShowSelf, spellID, canApply, isBossDebuff, casterIsPlayer, nameplateShowAll,timeMod, effect1, effect2, effect3)
-		if (config.showspecialicons) then
+		if (config.showspecialicons and config.specialalerts[name]) then
 			return config.specialalerts[name]
 		end
 		return bdCore:filterAura(name,caster)
@@ -573,7 +574,7 @@ function grid.layout(self, unit)
 	self.Debuffs['growth-x'] = "RIGHT"
 
 	self.Debuffs.CustomFilter = function(icons, unit, icon, name, rank, texture, count, dispelType, duration, expiration, caster, isStealable, nameplateShowSelf, spellID, canApply, isBossDebuff, casterIsPlayer, nameplateShowAll,timeMod, effect1, effect2, effect3)
-		if (config.showspecialicons) then
+		if (config.showspecialicons and config.specialalerts[name]) then
 			return config.specialalerts[name]
 		end
 		return bdCore:filterAura(name,caster)
