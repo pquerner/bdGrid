@@ -6,5 +6,6 @@
 ## X-oUF: oUFbdGrid
 ## Dependencies: bdCore
 
-defaults.lua
+config.lua
+functions.lua
 core.lua
