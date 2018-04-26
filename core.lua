@@ -543,6 +543,9 @@ function grid.layout(self, unit)
 			if (not dispel) then
 				dispel = select(5, UnitDebuff(unitid, i));
 				dispelName = select(1, UnitDebuff(unitid, i));
+				if (bdCore.isBFA) then
+					dispel = select(4, UnitDebuff(unitid, i));
+				end
 			end
 		end
 		
