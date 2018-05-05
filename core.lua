@@ -404,6 +404,29 @@ function grid.layout(self, unit)
 
 	self:Tag(self.Short, '[self.Short]')
 	self:Tag(self.Status, '[status]')
+	
+	if IsInRaid() then
+		self.Group = self.Health:CreateFontString(nil)
+		self.Group:SetFont(bdCore.media.font, 12, "OUTLINE")
+		self.Group:SetPoint('CENTER', self, "BOTTOMLEFT", 40, 8)
+		oUF.Tags.Events["self.Group"] = "UNIT_NAME_UPDATE"
+		oUF.Tags.Methods["self.Group"] = function(unit)
+			local name, server = UnitName(unit)
+			if(server and server ~= '') then
+				name = string.format('%s-%s', name, server)
+			end
+
+			for i=1, GetNumGroupMembers() do
+				local raidName, _, group = GetRaidRosterInfo(i)
+				if( raidName == name ) then
+					return "[" .. group .. "]"
+				end
+			end
+		end
+		self:Tag(self.Group, '[self.Group]')
+		self:Tag(self.Status, '[status]')
+	end
+
 
 	bdCore:hookEvent("bd_updateTags", function()
 		self.Short:UpdateTag()
